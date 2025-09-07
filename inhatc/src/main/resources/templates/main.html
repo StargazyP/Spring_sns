@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>게시물 관리</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        background-color: #f0f2f5; /* 배경 색상 */
+        font-family: Arial, sans-serif;
+      }
+
+      .wrapper {
+        width: 90%;
+        max-width: 800px;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1; /* 필요시, 배경과의 상호작용을 위해 설정 */
+      }
+
+      .container {
+        width: 95%;
+        margin: 0 auto 20px auto;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.2s;
+        position: relative;
+        overflow: hidden; /* 이미지가 카드 밖으로 나가지 않도록 설정 */
+      }
+
+      .card:hover {
+        transform: scale(1.02);
+      }
+
+      .card-header {
+        font-size: 20px;
+        color: #4b4b4b;
+        font-weight: bold;
+      }
+
+      .card-body {
+        margin-top: 10px;
+        color: #6c757d;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding-top: 100px;
+      }
+
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        width: 50%;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      #postForm,
+      #commentForm {
+        width: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      #content,
+      #commentContent {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        resize: none;
+      }
+
+      button,
+      .button-link {
+        padding: 10px 15px;
+        background-color: #007bff;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 10px;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      button:hover,
+      .button-link:hover {
+        background-color: #0056b3;
+      }
+
+      .button-link {
+        margin: 0 5px;
+        /* Spacing between buttons */
+      }
+
+      #comments {
+        width: 100%;
+        margin-top: 20px;
+        max-height: 400px; /* 필요한 최대 높이 설정 */
+        overflow-x: auto; /* 세로 스크롤바 추가 */
+        padding-right: 10px; /* 스크롤바와 내용 간의 간격 */
+      }
+
+      .profile-img {
+        width: 100%; /* 프로필 이미지를 카드 너비에 맞추기 위해 100%로 설정 */
+        max-width: 160px; /* 최대 너비를 설정하여 너무 커지지 않도록 제한 */
+        height: auto; /* 비율을 유지하면서 높이를 자동으로 조정 */
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+        margin-right: 20px; /* 이미지와 텍스트 사이에 간격 추가 */
+        float: left; /* 왼쪽 정렬 */
+      }
+
+      .close-button {
+        float: right;
+        color: #aaa;
+        font-size: 24px;
+        cursor: pointer;
+      }
+
+      .close-button:hover {
+        color: #f00;
+      }
+
+      .navbar {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #ffffff;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+      }
+
+      .navbar img {
+        width: 60px;
+        height: 60px;
+        margin: 0 20px;
+        cursor: pointer;
+      }
+
+      .navbar a {
+        color: white;
+        text-decoration: none;
+        font-size: 18px;
+        margin: 0 15px;
+      }
+
+      .delete-button {
+        float: right;
+        color: #aaa;
+        font-size: 24px;
+        cursor: pointer;
+      }
+
+      .delete-button:hover {
+        color: #f00;
+      }
+
+      .content-img {
+        width: calc(200px - 20px);
+        height: calc(200px - 20px);
+        object-fit: cover;
+        margin-top: 10px;
+      }
+
+      /* Toggle-container fixed position at the bottom right */
+      /* Toggle-container fixed position at the bottom right */
+      .toggle-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000; /* Ensure it appears above other content */
+      }
+
+      /* Common styles for content containers */
+      .content-container {
+        display: none; /* Hide by default, will be toggled by JavaScript */
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        width: 300px; /* Adjust width as needed */
+        max-height: 400px; /* Adjust height as needed */
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header styles */
+      .content-container .header {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .content-container .header .close-button {
+        font-size: 24px;
+        color: white;
+        cursor: pointer;
+      }
+
+      .content-container .header .close-button:hover {
+        color: #f00;
+      }
+
+      /* Messages area styles */
+      .content-container .messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+      }
+
+      /* Footer styles */
+      .content-container .footer {
+        background-color: #e9ecef;
+        padding: 10px;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        display: flex;
+        align-items: center;
+      }
+
+      .content-container .footer textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        resize: none;
+        margin-right: 10px;
+      }
+
+      .content-container .footer button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .content-container .footer button:hover {
+        background-color: #0056b3;
+      }
+
+      /* Specific styles for chat-box and user-box */
+      #chat-box {
+        display: none; /* Hidden by default */
+      }
+
+      #user-box {
+        display: none; /* Hidden by default */
+      }
+
+      .toggle-item {
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        margin-bottom: 5px;
+        text-align: center;
+      }
+
+      .toggle-item:hover {
+        background-color: #e9ecef;
+      }
+      /* Bubble styles for chat messages */
+      .bubble {
+        max-width: 75%; /* Limit the width of the bubble */
+        padding: 10px;
+        border-radius: 15px;
+        background-color: #f1f1f1;
+        display: inline-block;
+        word-wrap: break-word; /* Ensure long words break and wrap */
+      }
+
+      /* Specific styles for user messages */
+      .message.user .bubble {
+        background-color: #007bff; /* Blue background for user messages */
+        color: white;
+        align-self: flex-end; /* Align user messages to the right */
+      }
+
+      /* Specific styles for bot messages */
+      .message .bubble.bot {
+        background-color: #e9ecef; /* Light gray background for bot messages */
+        color: black;
+        align-self: flex-start; /* Align bot messages to the left */
+      }
+
+      /* Ensure the chat messages container uses flexbox to align messages */
+      #chat-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Space between messages */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Navigation Bar -->
+      <div class="navbar">
+        <!-- 홈: 이제 /member/view 대신 /api/posts 로 이동 -->
+        <img
+          src="/images/home.png"
+          style="height: 55px; width: 55px"
+          alt="home"
+          onclick="location.href='/';"
+        />
+
+        <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
+        <img
+          src="/images/user.png"
+          style="width: 50px; height: 50px"
+          alt="Logout"
+          onclick="location.href='/api/members/myapge'";
+        />
+
+        <!-- 로그아웃: /member/logout 대신 /api/logout -->
+        <img
+          src="/images/logout.png"
+          style="width: 50px; height: 50px"
+          alt="Logout"
+          onclick="document.getElementById('logout').submit();"
+        />
+        <form id="logout" action="/api/logout" method="post"></form>
+
+        <!-- 알람 / 게시물 확인: /member/PostCheck 대신 /posts/check -->
+        <img
+          src="/images/alram.png"
+          alt="Alarm"
+          onclick="location.href='/posts/check';"
+        />
+      </div>
+
+      <div class="container">
+        <p id="sessionInfo"></p>
+        <form id="postForm">
+          <div>
+            <textarea
+              id="content"
+              name="content"
+              placeholder="무슨 생각을 하고 있나요?"
+            ></textarea>
+          </div>
+          <div>
+            <input type="file" id="fileUpload" name="file" />
+          </div>
+          <button type="button" onclick="savePost()">저장</button>
+        </form>
+      </div>
+
+      <div id="postContainer">
+        <!-- Dynamic posts can be inserted here -->
+      </div>
+
+      <!-- Modal for displaying post details and comments -->
+      <div id="postModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <div id="postDetail">
+            <!-- Post details go here -->
+          </div>
+          <!-- Comment Section -->
+          <div id="commentSection">
+            <div id="comments">
+              <!-- Comments will be dynamically inserted here -->
+            </div>
+            <div id="commentForm">
+              <textarea
+                id="commentContent"
+                placeholder="댓글을 입력하세요"
+              ></textarea>
+              <button onclick="submitComment()">댓글 작성</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Toggle Container -->
+    <div class="toggle-container">
+      <div class="toggle-list">
+        <div id="toggle-chat" class="toggle-item">Chat with GPT</div>
+        <div id="toggle-user" class="toggle-item">User</div>
+      </div>
+      <div id="chat-box" class="content-container chat-box">
+        <div class="header">Chat with GPT</div>
+        <div class="messages" id="chat-messages"></div>
+        <div class="footer">
+          <textarea
+            id="chat-input"
+            placeholder="Type your message here..."
+          ></textarea>
+          <button id="send-btn">Send</button>
+        </div>
+      </div>
+      <div id="user-box" class="content-container user-box">
+        <div class="header">User</div>
+        <ul id="user-messages">
+          <!-- User messages will be displayed here -->
+        </ul>
+      </div>
+    </div>
+    <script type="text/javascript">
+      // ✅ 초기 실행
+      window.onload = async function () {
+        try {
+          await fetchMemberEmail(); // 세션 정보 가져오기
+          setMemberPageLink(); // 사용자 페이지 링크 설정
+          fetchPosts(); // 게시물 로드
+          loadReceivedMessages(); // 메시지 로드
+
+          // 초기 상태 설정
+          document.getElementById("chat-box").style.display = "none";
+          document.getElementById("user-box").style.display = "none";
+        } catch (error) {
+          console.error("window onload 중 에러:", error);
+        }
+      };
+
+      // ✅ UI 토글 이벤트
+      document
+        .getElementById("toggle-chat")
+        .addEventListener("click", function () {
+          toggleVisibility("chat-box");
+        });
+
+      document
+        .getElementById("toggle-user")
+        .addEventListener("click", function () {
+          toggleVisibility("user-box");
+        });
+
+      function toggleVisibility(id) {
+        const element = document.getElementById(id);
+        if (element.style.display === "none" || element.style.display === "") {
+          element.style.display = "flex";
+        } else {
+          element.style.display = "none";
+        }
+      }
+
+      // =====================================================
+      // 🔹 세션 / 사용자 관련
+      // =====================================================
+      async function fetchMemberEmail() {
+        try {
+          const response = await fetch("/api/session");
+          const data = await response.json();
+
+          if (data.loginEmail) {
+            saveMemberEmail(data.loginEmail);
+          } else {
+            console.error("사용자 이메일을 찾을 수 없습니다.");
+          }
+        } catch (error) {
+          console.error("memberEmail을 가져오는 중 에러:", error);
+        }
+      }
+
+      function saveMemberEmail(memberEmail) {
+        sessionStorage.setItem("loggedInMember", memberEmail);
+        console.log("memberEmail 저장됨:", memberEmail);
+      }
+
+      function getMemberEmail() {
+        const memberEmail = sessionStorage.getItem("loggedInMember");
+        if (memberEmail) {
+          return memberEmail;
+        } else {
+          console.error("sessionStorage에서 memberEmail을 찾을 수 없습니다.");
+          return null;
+        }
+      }
+
+      function setMemberPageLink() {
+        const memberEmail = getMemberEmail();
+        if (memberEmail) {
+          const userImage = document.getElementById("userImage");
+          userImage.onclick = () => {
+            location.href = `/members/mypage?email=${encodeURIComponent(
+              memberEmail
+            )}`;
+          };
+        }
+      }
+
+      // =====================================================
+      // 🔹 게시물 관련
+      // =====================================================
+      async function fetchPosts() {
+        try {
+          const response = await fetch("/api/posts");
+          const posts = await response.json();
+
+          const memberEmail = getMemberEmail();
+          const postContainer = document.getElementById("postContainer");
+          postContainer.innerHTML = "";
+
+          posts.forEach((post) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.setAttribute("data-id", post.id);
+            card.onclick = function () {
+              viewPost(post.id);
+            };
+
+            if (memberEmail === post.writer) {
+              const closeButton = document.createElement("span");
+              closeButton.className = "close-button";
+              closeButton.innerHTML = "&times;";
+              closeButton.onclick = function (event) {
+                deletePost(event, this.parentNode.getAttribute("data-id"));
+              };
+              card.appendChild(closeButton);
+            }
+
+            const img = document.createElement("img");
+            img.className = "profile-img";
+            img.src = `/api/posts/${post.id}/writer/image`;
+            img.onerror = function () {
+              this.style.display = "none";
+            };
+
+            const header = document.createElement("div");
+            header.className = "card-header";
+            header.textContent = post.writer;
+
+            const body = document.createElement("div");
+            body.className = "card-body";
+            body.textContent = `${new Date(
+              post.createdDate
+            ).toLocaleString()} - ${post.content}`;
+
+            const contentImg = document.createElement("img");
+            contentImg.className = "content-img";
+            contentImg.src = `/api/posts/${post.id}/image`;
+            contentImg.style.width = "200px";
+            contentImg.style.height = "200px";
+            contentImg.onerror = function () {
+              this.style.display = "none";
+            };
+
+            card.appendChild(img);
+            card.appendChild(header);
+            card.appendChild(contentImg);
+            card.appendChild(body);
+            postContainer.appendChild(card);
+          });
+        } catch (error) {
+          console.error("게시물 가져오기 중 에러:", error);
+        }
+      }
+
+      function viewPost(postId) {
+        const modal = document.getElementById("postModal");
+        modal.style.display = "block";
+
+        fetch(`/api/posts/${postId}`)
+          .then((response) => response.json())
+          .then((post) => {
+            const postDetailContainer = document.getElementById("postDetail");
+            postDetailContainer.innerHTML = "";
+
+            const img = document.createElement("img");
+            img.className = "profile-img";
+            img.src = `/api/posts/${encodeURIComponent(post.id)}/writer/image`;
+            img.style.width = "100px";
+            img.style.height = "100px";
+            img.style.borderRadius = "50%";
+            img.onerror = function () {
+              this.style.display = "none";
+            };
+
+            const contentImg = document.createElement("img");
+            contentImg.className = "content-img";
+            contentImg.src = `/api/posts/${postId}/image`;
+            contentImg.style.width = "200px";
+            contentImg.style.height = "200px";
+            contentImg.onerror = function () {
+              this.style.display = "none";
+            };
+
+            const likeButton = document.createElement("button");
+            likeButton.textContent = `Like (${post.love})`;
+            likeButton.onclick = function () {
+              toggleLove(postId, likeButton);
+            };
+
+            const contentHtml = `
+          <h2><a href="/members/mypage?email=${post.writer}">${
+              post.writer
+            }</a></h2>
+          <p>${post.content}</p>
+          <p><strong>조회수:</strong> ${post.hits}</p>
+          <p>${new Date(post.createdDate).toLocaleString()}</p>
+        `;
+
+            postDetailContainer.appendChild(img);
+            postDetailContainer.innerHTML += contentHtml;
+            postDetailContainer.appendChild(contentImg);
+            postDetailContainer.appendChild(likeButton);
+
+            fetchComments(postId);
+          })
+          .catch((error) =>
+            console.error("Error fetching post details:", error)
+          );
+      }
+
+      async function savePost() {
+        const content = document.getElementById("content").value;
+        const fileInput = document.getElementById("fileUpload");
+        const file = fileInput.files[0];
+
+        const formData = new FormData();
+        formData.append("content", content);
+        if (file) {
+          formData.append("file", file);
+        }
+
+        try {
+          const response = await fetch("/api/posts", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            throw new Error("게시물을 저장하는데 실패했습니다.");
+          }
+          alert(await response.text());
+          fetchPosts();
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      async function deletePost(event, postId) {
+        event.stopPropagation();
+        if (confirm("게시물을 삭제하시겠습니까?")) {
+          try {
+            const response = await fetch(`/api/posts/${postId}`, {
+              method: "DELETE",
+            });
+
+            if (!response.ok) {
+              throw new Error("게시물 삭제 실패");
+            }
+            alert("게시물이 삭제되었습니다.");
+            fetchPosts();
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        }
+      }
+
+      // =====================================================
+      // 🔹 댓글 관련
+      // =====================================================
+      async function fetchComments(postId) {
+        try {
+          const response = await fetch(`/api/posts/${postId}/comments`);
+          const comments = await response.json();
+
+          const commentsContainer = document.getElementById("comments");
+          commentsContainer.innerHTML = "";
+
+          comments.forEach((comment) => {
+            const commentDiv = document.createElement("div");
+            commentDiv.className = "comment";
+
+            const img = document.createElement("img");
+            img.className = "profile-img";
+            img.src = `/api/members/${encodeURIComponent(
+              comment.writer
+            )}/image`;
+            img.style.width = "50px";
+            img.style.height = "50px";
+            img.style.borderRadius = "50%";
+
+            commentDiv.appendChild(img);
+            commentDiv.innerHTML += `
+          <p><strong>작성자:</strong> ${comment.writer}</p>
+          <p>${comment.comment}</p>
+          <hr>
+        `;
+            commentsContainer.appendChild(commentDiv);
+          });
+        } catch (error) {
+          console.error("Error fetching comments:", error);
+        }
+      }
+
+      async function submitComment() {
+        const commentContent = document.getElementById("commentContent").value;
+        const postId = getPostIdFromUrl();
+
+        const data = {
+          comment: commentContent,
+          user: getMemberEmail(),
+        };
+
+        try {
+          const response = await fetch(`/api/posts/${postId}/comments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error("댓글을 저장하는데 실패했습니다.");
+          }
+          alert("댓글이 성공적으로 저장되었습니다.");
+          fetchComments(postId);
+        } catch (error) {
+          console.error("Error submitting comment:", error);
+        }
+      }
+
+      function getPostIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("id");
+      }
+
+      // =====================================================
+      // 🔹 채팅 / 메시지 관련
+      // =====================================================
+      async function loadReceivedMessages() {
+        const receiver = getMemberEmail();
+        if (!receiver) return;
+
+        const encodedReceiver = encodeURIComponent(receiver);
+
+        try {
+          const response = await fetch(
+            `/api/chats/senders?receiver=${encodedReceiver}`
+          );
+          if (!response.ok) throw new Error("발신자 가져오기 실패.");
+
+          const data = await response.json();
+          const messagesList = document.getElementById("user-messages");
+          if (!messagesList) return;
+
+          messagesList.innerHTML = "";
+          const uniqueSenders = new Set();
+
+          data.forEach((message) => {
+            if (message.sender === receiver) return;
+
+            if (!uniqueSenders.has(message.sender)) {
+              uniqueSenders.add(message.sender);
+
+              const listItem = document.createElement("li");
+              listItem.textContent = `${message.sender} `;
+              listItem.addEventListener("click", function () {
+                const encodedSender = encodeURIComponent(message.sender);
+                window.location.href = `/chat?senderId=${encodedReceiver}&receiverId=${encodedSender}`;
+              });
+
+              messagesList.appendChild(listItem);
+            }
+          });
+        } catch (error) {
+          console.error("발신자 가져오기 중 에러:", error);
+        }
+      }
+
+      // =====================================================
+      // 🔹 좋아요 / 모달 관련
+      // =====================================================
+      async function toggleLove(postId, button) {
+        const user = getMemberEmail();
+        if (!user || user === "defaultEmail") {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `/api/posts/${postId}/love?email=${encodeURIComponent(user)}`,
+            { method: "POST" }
+          );
+
+          if (!response.ok) throw new Error(await response.text());
+
+          const data = await response.text();
+          let currentCount = parseInt(
+            button.textContent.match(/\d+/)?.[0] || "0"
+          );
+          if (data === "liked") {
+            button.textContent = `Like (${currentCount + 1})`;
+          } else if (data === "unliked") {
+            button.textContent = `Like (${currentCount - 1})`;
+          }
+        } catch (error) {
+          console.error("Error toggling like:", error);
+        }
+      }
+
+      function closeModal() {
+        const modal = document.getElementById("postModal");
+        modal.style.display = "none";
+      }
+
+      // =====================================================
+      // 🔹 채팅 입력 이벤트 (마지막에 배치)
+      // =====================================================
+      document
+        .getElementById("chat-input")
+        .addEventListener("keydown", function (event) {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            document.getElementById("send-btn").click();
+          }
+        });
+    </script>
+  </body>
+</html>

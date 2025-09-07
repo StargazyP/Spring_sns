@@ -2,18 +2,14 @@ package kr.co.inhatc.inhatc.dto;
 
 import java.util.Optional;
 
-import com.mysql.cj.jdbc.Blob;
-
+import kr.co.inhatc.inhatc.entity.MemberEntity;
+import kr.co.inhatc.inhatc.repository.MemberRepository;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import kr.co.inhatc.inhatc.entity.MemberEntity;
-import kr.co.inhatc.inhatc.repository.MemberRepository;
 
-import org.hibernate.mapping.List;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException; 
+
 @Getter
 @Setter
 @NoArgsConstructor

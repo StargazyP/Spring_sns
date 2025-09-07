@@ -1,6 +1,10 @@
 package kr.co.inhatc.inhatc.entity;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,9 +21,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -46,10 +47,10 @@ public class PostEntity {
     private LocalDateTime modifiedDate; // 수정일
 
     private int love; // 좋아요
-
+    
     @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     @OrderBy("id asc")
-    private List<commentEntity> comments;
+    private List<CommentEntity> comments;
 
     @ManyToMany
     @JoinTable(
@@ -57,6 +58,7 @@ public class PostEntity {
         joinColumns = @JoinColumn(name = "post_id"),
         inverseJoinColumns = @JoinColumn(name = "member_id")
     )
+    
     private Set<MemberEntity> lovedBy = new HashSet<>(); // 좋아요 누른 사용자 목록
 
     @Builder
@@ -101,5 +103,12 @@ public class PostEntity {
      */
     public void delete() {
         this.deleteYn = 'Y';
+    }
+
+    /**
+     * 특정 사용자가 좋아요를 눌렀는지 확인
+     */
+    public boolean isLovedBy(MemberEntity member) {
+        return this.lovedBy.contains(member);
     }
 }

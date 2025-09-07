@@ -3,15 +3,17 @@ package kr.co.inhatc.inhatc.entity;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Column;
 import jakarta.persistence.Table;
-
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,8 +24,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "comments_entity")
-public class commentEntity {
+public class CommentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +35,7 @@ public class commentEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String comment; // 댓글 내용
 
-    @Column(name = "create_date")
+    @Column(name = "create_date", updatable = false) // 생성일 수정 불가 설정
     @CreatedDate
     private LocalDateTime createDate; // 생성일
 
@@ -41,11 +44,11 @@ public class commentEntity {
     private PostEntity post; // 게시글과의 관계 설정
 
     @ManyToOne
-    @JoinColumn(name = "member_email")
+    @JoinColumn(name = "member_email", referencedColumnName = "memberEmail")
     private MemberEntity writer; // 작성자 정보
 
     @Builder
-    public commentEntity(String comment, PostEntity post, MemberEntity writer) {
+    public CommentEntity(String comment, PostEntity post, MemberEntity writer) {
         this.comment = comment;
         this.post = post;
         this.writer = writer;

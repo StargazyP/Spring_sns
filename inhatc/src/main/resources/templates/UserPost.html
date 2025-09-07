@@ -1,246 +1,492 @@
 <!DOCTYPE html>
-<html lang="ko">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Posts</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-        }
+      .wrapper {
+        width: 100%;
+        max-width: 800px;
+        background-color: rgba(255, 255, 255, 0.9); /* 약간 투명한 배경색 */
+        border-radius: 15px;
+        padding: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        margin: 0 auto; /* Center the wrapper */
+      }
 
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container,
+      .navbar {
+        width: 90%;
+        margin: 0 auto;
+        padding: 10px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .post {
+        background-color: #ffffff;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .post:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .navbar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #ffffff;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        border-radius: 10px;
+      }
+
+      .navbar img {
+        height: 50px;
+        margin: 0 15px;
+        cursor: pointer;
+      }
+
+      /* Modal Styles */
+      #postModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+      }
+
+      .modal-content {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        position: relative;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #postDetail img.profile-img {
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+      }
+
+      #postDetail img.content-img {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        object-fit: cover;
+        margin-top: 10px;
+      }
+
+      #postDetail button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+
+      #postDetail button:hover {
+        background-color: #0056b3;
+      }
+
+      .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        font-size: 28px;
+        color: #333;
+        cursor: pointer;
+      }
+
+      .close:hover {
+        color: red;
+      }
+
+      /* Comment Form and Comments Inside Modal */
+      #commentForm {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      #commentContent {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        resize: none;
+        margin-bottom: 10px;
+      }
+
+      #comments {
+        width: 100%;
+        margin-top: 20px;
+        max-height: 200px; /* 원하는 최대 높이 설정 */
+        overflow-y: auto; /* 세로 스크롤바 생성 */
+        padding-right: 10px; /* 스크롤바와 콘텐츠 간 간격 조정 */
+      }
+
+      .comment {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+      }
+
+      .comment img {
+        float: left;
+        margin-right: 10px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .navbar img {
+          height: 40px;
+          margin: 0 10px;
+        }
+      }
+
+      @media (max-width: 480px) {
         .container {
-            max-width: 800px;
-            margin: 50px auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          padding: 10px;
         }
 
         .post {
-            border-bottom: 1px solid #ddd;
-            padding: 10px 0;
+          padding: 15px;
         }
 
-        .post:last-child {
-            border-bottom: none;
+        #postDetail img.profile-img {
+          width: 80px;
+          height: 80px;
         }
 
-        .post-title {
-            font-size: 1.5em;
-            margin-bottom: 5px;
+        #postDetail img.content-img {
+          max-width: 100%;
         }
-
-        .post-content {
-            margin-bottom: 10px;
-        }
-
-        .post-date {
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .content-img {
-            width: 200px;
-            height: 200px;
-            object-fit: cover;
-            margin-top: 10px;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            border-radius: 8px;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .navbar {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #ffffff;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
-        }
-
-        .navbar img {
-            width: 60px;
-            height: 60px;
-            margin: 0 20px;
-            cursor: pointer;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            margin: 0 15px;
-        }
+      }
     </style>
-</head>
-
-<body>
-    <!-- Navigation Bar -->
-    <div class="navbar">
-        <img src="/images/home.png" style="height: 55px; width: 55px;" alt="home" onclick="location.href='/member/view';">
-        <img src="/images/user.png" alt="User Image" onclick="location.href='/member/mypage';">
-        <img src="/images/logout.png" style="width: 50px; height: 50px;" alt="Dashboard"
-            onclick="document.getElementById('logout').submit();">
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Navigation Bar -->
+      <div class="navbar">
+        <img
+          src="/images/home.png"
+          alt="home"
+          onclick="location.href='/member/view';"
+        />
+        <img
+          src="/images/user.png"
+          alt="User Image"
+          onclick="location.href='/member/mypage';"
+        />
+        <img
+          src="/images/logout.png"
+          alt="Logout"
+          onclick="document.getElementById('logout').submit();"
+        />
         <form id="logout" action="/member/logout" method="post"></form>
-        <img src="/images/alram.png" alt="Alarm" onclick="location.href ='/UserPost';">
-    </div>
+        <img
+          src="/images/alram.png"
+          alt="Alarm"
+          onclick="location.href ='/member/PostCheck';"
+        />
+      </div>
 
-    <div class="container">
-        <h1>User Posts</h1>
-        <div id="post-list"></div>
-    </div>
-
-    <!-- Modal -->
-    <div id="postModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="document.getElementById('postModal').style.display='none'">&times;</span>
-            <div id="postDetail"></div>
+      <!-- Container for Posts -->
+      <div class="container">
+        <!-- Check if postCheckResults is empty -->
+        <div th:if="${#lists.isEmpty(postCheckResults)}">
+          <p>내용이 없습니다.</p>
         </div>
+
+        <!-- Iterate over posts if available -->
+        <div
+          th:each="result : ${postCheckResults}"
+          class="post"
+          th:unless="${#lists.isEmpty(postCheckResults)}"
+        >
+          <div
+            class="post-message"
+            th:onclick="'viewPost(' + ${result.postId} + ')'"
+            th:text="${result.message}"
+          ></div>
+        </div>
+      </div>
+
+      <div id="postContainer">
+        <!-- Dynamic posts can be inserted here -->
+      </div>
+
+      <div id="postModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <div id="postDetail">
+            <!-- Post details go here -->
+          </div>
+          <!-- Comment Section -->
+          <div id="commentSection">
+            <div id="comments">
+              <!-- Comments will be dynamically inserted here -->
+            </div>
+            <div id="commentForm">
+              <textarea
+                id="commentContent"
+                placeholder="댓글을 입력하세요"
+              ></textarea>
+              <button onclick="submitComment()">댓글 작성</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            fetch('/member/UserPost', {
-                method: 'GET',
-                credentials: 'include'  // Include cookies for session
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const postList = document.getElementById('post-list');
-                    if (Array.isArray(data) && data.length > 0) {
-                        data.forEach(post => {
-                            const postDiv = document.createElement('div');
-                            postDiv.className = 'post';
-                            postDiv.onclick = () => viewPost(post.id); // Add onclick event to call viewPost
+      function viewPost(postId) {
+        const modal = document.getElementById("postModal");
+        const postDetailContainer = document.getElementById("postDetail");
 
-                            const postTitle = document.createElement('div');
-                            postTitle.className = 'post-title';
-                            postTitle.textContent = post.writer || 'No Title';
+        if (!postDetailContainer || !modal) {
+          console.error("필수 DOM 요소가 누락되었습니다.");
+          return;
+        }
 
-                            const postContent = document.createElement('div');
-                            postContent.className = 'post-content';
-                            postContent.textContent = post.content || 'No Content';
+        modal.style.display = "flex"; // Flexbox를 사용하여 중앙에 모달을 표시
 
-                            const postDate = document.createElement('div');
-                            postDate.className = 'post-date';
-                            postDate.textContent = `Created: ${post.createdDate || 'No Date'} | Modified: ${post.modifiedDate || 'No Date'}`;
+        const modalUrl = `/member/view?id=${postId}`;
+        window.history.pushState({}, "", modalUrl);
 
-                            postDiv.appendChild(postTitle);
-                            postDiv.appendChild(postContent);
-                            postDiv.appendChild(postDate);
+        fetch(`/view/${postId}`)
+          .then((response) => response.json())
+          .then((post) => {
+            postDetailContainer.innerHTML = ""; // 이전 내용 지우기
 
-                            if (post.imgsource) {
-                                const contentImg = document.createElement('img');
-                                contentImg.className = 'content-img';
-                                contentImg.src = `/image/${post.id}`;
-                                postDiv.appendChild(contentImg);
-                            }
+            // 닫기 버튼 생성 및 추가
+            const closeButton = document.createElement("button");
+            closeButton.className = "close";
+            closeButton.innerHTML = "×";
+            closeButton.onclick = closeModal;
+            postDetailContainer.appendChild(closeButton);
 
-                            postList.appendChild(postDiv);
-                        });
-                    } else {
-                        postList.textContent = 'No posts found for this user.';
-                    }
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    document.getElementById('post-list').textContent = 'Error loading posts.';
-                });
-        });
+            // 사용자 이미지 요소 생성
+            const img = document.createElement("img");
+            img.className = "profile-img";
+            img.src = `/Userimgsource?email=${encodeURIComponent(post.writer)}`;
+            img.onerror = function () {
+              this.style.display = "none"; // 이미지 로드 실패 시 숨기기
+            };
 
-        function viewPost(postId) {
-            const modal = document.getElementById('postModal');
-            modal.style.display = 'block';
+            // 게시물 콘텐츠 이미지 요소 생성
+            const contentImg = document.createElement("img");
+            contentImg.className = "content-img";
+            contentImg.src = `/image/${postId}`;
+            contentImg.onerror = function () {
+              this.style.display = "none"; // 이미지 로드 실패 시 숨기기
+            };
 
-            const modalUrl = `/member/view?id=${postId}`;
-            window.history.pushState({}, '', modalUrl);
+            // 좋아요 버튼 요소 생성
+            const likeButton = document.createElement("button");
+            likeButton.textContent = `Like (${post.love})`;
+            likeButton.onclick = function () {
+              toggleLove(postId, likeButton);
+            };
 
-            fetch(`/view/${postId}`)
-                .then(response => response.json())
-                .then(post => {
-                    const postDetailContainer = document.getElementById('postDetail');
-                    postDetailContainer.innerHTML = '';  // 내용을 비우고 새로운 정보를 추가
-
-                    // 유저 이미지 요소 생성
-                    const img = document.createElement('img');
-                    img.className = 'profile-img';
-                    img.src = `/Userimgsource?email=${encodeURIComponent(post.writer)}`;
-                    img.style.width = '100px'; // 이미지 크기 조정
-                    img.style.height = '100px';
-                    img.style.borderRadius = '50%'; // 이미지를 원형으로 만들기
-
-                    // 포스트 내용 이미지 요소 생성
-                    const contentImg = document.createElement('img');
-                    contentImg.className = 'content-img';
-                    contentImg.src = `/image/${postId}`;
-                    contentImg.style.width = '200px'; // 이미지 크기 조정
-                    contentImg.style.height = '200px';
-
-                    // 작성자 이름과 포스트 내용, 조회수, 생성 날짜 추가
-                    const contentHtml = `
+            // 게시물 세부 정보 HTML 생성
+            const contentHtml = `
                         <h2>${post.writer}</h2>
                         <p>${post.content}</p>
                         <p><strong>조회수:</strong> ${post.hits}</p>
                         <p>${new Date(post.createdDate).toLocaleString()}</p>
                     `;
 
-                    // 요소를 postDetailContainer에 추가
-                    postDetailContainer.appendChild(img);
-                    postDetailContainer.innerHTML += contentHtml;
-                    postDetailContainer.appendChild(contentImg);
+            // 요소를 postDetailContainer에 추가
+            postDetailContainer.appendChild(img);
+            postDetailContainer.insertAdjacentHTML("beforeend", contentHtml);
+            postDetailContainer.appendChild(contentImg);
+            postDetailContainer.appendChild(likeButton);
 
-                    fetchComments(postId); // Assuming fetchComments is defined elsewhere
-                })
-                .catch(error => console.error('Error fetching post details:', error));
+            // 댓글 가져오기
+            fetchComments(postId);
+          })
+          .catch((error) => {
+            console.error("게시물 세부 정보 가져오기 오류:", error);
+          });
+      }
+
+      function closeModal() {
+        const modal = document.getElementById("postModal");
+        modal.style.display = "none";
+      }
+
+      document
+        .getElementById("postModal")
+        .addEventListener("click", function (event) {
+          if (event.target === this) {
+            closeModal();
+          }
+        });
+
+      function toggleLove(postId, button) {
+        const user = getMemberEmail();
+        if (user !== null && user !== "defaultEmail") {
+          fetch(
+            `/togglelove?postId=${postId}&email=${encodeURIComponent(user)}`,
+            {
+              method: "POST",
+            }
+          )
+            .then((response) => {
+              if (!response.ok) {
+                return response.text().then((text) => {
+                  throw new Error(text);
+                });
+              }
+              return response.text();
+            })
+            .then((data) => {
+              let currentCount = parseInt(
+                button.textContent.match(/\d+/)?.[0] || "0"
+              );
+              if (data === "liked") {
+                button.textContent = `Like (${currentCount + 1})`;
+              } else if (data === "unliked") {
+                button.textContent = `Like (${currentCount - 1})`;
+              } else {
+                console.error("Error toggling love:", data);
+              }
+            })
+            .catch((error) => console.error("Error:", error));
+        } else {
+          window.location.href = "/login";
         }
-    </script>
-</body>
+      }
 
+      function submitComment() {
+        const commentContent = document.getElementById("commentContent").value;
+        const postId = getPostIdFromUrl();
+        console.log(postId);
+
+        const data = {
+          comment: commentContent,
+          user: getMemberEmail(),
+          article: postId,
+        };
+
+        fetch("/api/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("댓글을 저장하는데 실패했습니다.");
+            }
+            return response.json();
+          })
+          .then((comment) => {
+            alert("댓글이 성공적으로 저장되었습니다.");
+            fetchComments(postId);
+          })
+          .catch((error) => console.error("Error submitting comment:", error));
+      }
+
+      function fetchComments(postId) {
+        fetch(`/api/comments/${postId}`)
+          .then((response) => response.json())
+          .then((comments) => {
+            const commentsContainer = document.getElementById("comments");
+            commentsContainer.innerHTML = "";
+
+            comments.forEach((comment) => {
+              const commentDiv = document.createElement("div");
+              commentDiv.className = "comment";
+
+              // 이미지 요소 생성
+              const img = document.createElement("img");
+              img.className = "profile-img";
+              img.src = `/Userimgsource?email=${encodeURIComponent(
+                comment.writer
+              )}`;
+              img.style.width = "50px"; // 이미지 크기 조정
+              img.style.height = "50px";
+              img.style.borderRadius = "50%"; // 이미지를 원형으로 만들기
+
+              // 이미지를 댓글 div에 추가
+              commentDiv.appendChild(img);
+
+              // 작성자 정보와 댓글 내용 추가
+              commentDiv.innerHTML += `
+                                    <p><strong>작성자:</strong> ${comment.writer}</p>
+                                    <p>${comment.comment}</p>
+                                    <hr>
+                                `;
+              commentsContainer.appendChild(commentDiv);
+            });
+          })
+          .catch((error) => console.error("Error fetching comments:", error));
+      }
+
+      function getPostIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("id");
+      }
+
+      function getMemberEmail() {
+        const memberEmail = sessionStorage.getItem("memberEmail");
+        if (memberEmail) {
+          console.log("memberEmail retrieved:", memberEmail);
+          return memberEmail;
+        } else {
+          console.error("No memberEmail found in sessionStorage");
+          return null;
+        }
+      }
+    </script>
+  </body>
 </html>

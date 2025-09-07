@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT with Spring Boot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #e5e5e5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 500px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+        text-align: center;
+        color: #333;
+      }
+
+      .chat-box {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+
+      .chat-bubble {
+        background-color: #f1f0f0;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 80%;
+        align-self: flex-start;
+        word-break: break-word;
+      }
+
+      .chat-bubble.user {
+        background-color: #007bff;
+        color: white;
+        align-self: flex-end;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        resize: none;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+
+      button {
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #218838;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Chat with GPT</h1>
+      <div class="chat-box" id="chat-box">
+        <!-- Chat bubbles will be appended here -->
+      </div>
+      <form id="chat-form">
+        <textarea id="prompt" name="prompt" rows="3" placeholder="Type your message here..." required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+    <script src="app.js"></script>
+  </body>
+  <script>
+    document.getElementById('chat-form').addEventListener('submit', async function(event) {
+      event.preventDefault(); // Prevent the default form submission behavior
+
+      const prompt = document.getElementById('prompt').value;
+      const chatBox = document.getElementById('chat-box');
+
+      // Append user message to chat box
+      const userBubble = document.createElement('div');
+      userBubble.className = 'chat-bubble user';
+      userBubble.textContent = prompt;
+      chatBox.appendChild(userBubble);
+
+      // Clear the input field
+      document.getElementById('prompt').value = '';
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        
+        // Append GPT response to chat box
+        const gptBubble = document.createElement('div');
+        gptBubble.className = 'chat-bubble';
+        gptBubble.textContent = data.response;
+        chatBox.appendChild(gptBubble);
+
+        // Scroll to the bottom of the chat box
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch (error) {
+        const errorBubble = document.createElement('div');
+        errorBubble.className = 'chat-bubble';
+        errorBubble.textContent = 'Error: ' + error.message;
+        chatBox.appendChild(errorBubble);
+
+        // Scroll to the bottom of the chat box
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    });
+
+    // Enable form submission with Enter key
+    document.getElementById('prompt').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault(); // Prevent adding a new line
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+      }
+    });
+  </script>
+</html>

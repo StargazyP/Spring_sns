@@ -1,17 +1,17 @@
 package kr.co.inhatc.inhatc.service;
 
-import java.util.Optional;
-
-import org.springframework.stereotype.Service;
-import kr.co.inhatc.inhatc.repository.*;
-import lombok.RequiredArgsConstructor;
-import kr.co.inhatc.inhatc.dto.*;
-import kr.co.inhatc.inhatc.entity.*;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.co.inhatc.inhatc.dto.MemberDTO;
+import kr.co.inhatc.inhatc.entity.MemberEntity;
+import kr.co.inhatc.inhatc.repository.MemberRepository;
+import lombok.RequiredArgsConstructor;
 
 
 @Service // 스프링이 관리해주는 객체 == 스프링 빈
@@ -52,8 +52,8 @@ public class MemberService {
             return "업로드 실패: 파일이 비어 있습니다.";
         }
 
-        String userDirectory = "C:\\Users\\82102\\OneDrive\\바탕 화면\\spring test\\inhatc\\src\\main\\java\\kr\\" + userEmail; // 서버에 저장할 경로
-        Path userPath = Paths.get(userDirectory);
+        String userDirectory = "C:\\Users\\jdajs\\Downloads\\spring test\\inhatc\\src\\main\\java\\kr\\" + userEmail; // 서버에 저장할 경로
+        Path userPath = Path.of(userDirectory);
         if (!Files.exists(userPath)) {
             Files.createDirectories(userPath); // 사용자 디렉토리가 없다면 생성
         }

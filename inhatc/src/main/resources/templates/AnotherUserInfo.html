@@ -234,40 +234,21 @@
 
       <div class="container">
         <div class="profile-img-container">
-          <!-- 현재 프로필 이미지 표시 -->
+          <!-- ?��?�� ?��로필 ?��미�?? ?��?�� -->
           <img
             id="profileImage"
             class="profile-img"
             th:src="@{/member/Userimgsource/{email}(email=${loggedInMember.memberEmail})}"
             alt="Profile Image"
-          /><br />
-          welcome! <span th:text="${loggedInMember.memberName}"></span>
+          />
+          <br />
+          Welcome! <span id="memberEmail" th:text="${loggedInMember.memberEmail}"></span>
         </div>
 
-        <!-- 파일 업로드 폼 -->
-        <form
-          th:action="@{/member/upload}"
-          method="post"
-          enctype="multipart/form-data"
-        >
-          <label for="file">프로필 사진 변경</label>
-          <input type="file" id="file" name="file" required />
-
-          <!-- 로그인 이메일을 함께 전송 -->
-          <input type="hidden" name="loginEmail" th:value="${loginEmail}" />
-
-          <button type="submit">Upload</button>
-        </form>
-
-        <!-- 사용자 포스트 표시 영역 -->
+        <!-- ?��?��?�� ?��?��?�� ?��?�� ?��?�� -->
         <div id="post-list">
-          <div th:each="post : ${userpost}" class="card">
-            <span
-              class="delete-button"
-              th:attr="data-post-id=${post.id}"
-              onclick="deletePost(this)"
-              >X</span
-            >
+          <div th:each="post : ${secondpost}" class="card">
+            <!-- <span class="delete-button" th:attr="data-post-id=${post.id}" onclick="deletePost(this)">X</span> -->
             <div class="card-header" th:text="${post.writer}">No Title</div>
             <div class="card-body" th:text="${post.content}">No Content</div>
             <div class="post-date">
@@ -283,29 +264,51 @@
             </div>
           </div>
         </div>
+
+        <button type="button" onclick="session()">버튼</button>
+
+
       </div>
     </div>
-
-    <script>
-      function deletePost(element) {
-        const postId = element.getAttribute("data-post-id");
-        if (confirm("게시물을 삭제하시겠습니까?")) {
-          fetch(`/member/delete?id=${encodeURIComponent(postId)}`, {
-            method: "POST",
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error("게시물 삭제 실패");
-              }
-              return response.text();
-            })
-            .then(() => {
-              alert("게시물이 삭제되었습니다.");
-              element.parentElement.remove(); // 삭제된 포스트 숨기기
-            })
-            .catch((error) => console.error("Error:", error));
-        }
+    <script type="text/javascript">
+      window.onload = function () {
+          fetchMemberEmail();
+      };
+      function session(){
+        var senderID = getMemberEmail();
+        var receiverID = document.getElementById("memberEmail").textContent.trim();
+        window.location.href=`/chat?senderID=${senderID}&receiverID=${receiverID}`;
       }
-    </script>
+
+      function fetchMemberEmail() {
+          fetch('/gettingSession')
+              .then(response => response.json())
+              .then(data => {
+                  if (data.loginEmail) {
+                      saveMemberEmail(data.loginEmail);
+                  } else {
+                      console.error('User email not found');
+                  }
+              })
+              .catch(error => console.error('Error fetching member email:', error));
+      }
+
+      function saveMemberEmail(memberEmail) {
+          sessionStorage.setItem('memberEmail', memberEmail);
+          console.log('memberEmail saved:', memberEmail);
+      }
+
+      function getMemberEmail() {
+            const memberEmail = sessionStorage.getItem('memberEmail');
+            if (memberEmail) {
+                console.log('memberEmail retrieved:', memberEmail);
+                return memberEmail;
+            } else {
+                console.error('No memberEmail found in sessionStorage');
+                return null;
+            }
+        }
+      </script>
   </body>
+
 </html>

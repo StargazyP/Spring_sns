@@ -2,8 +2,6 @@ package kr.co.inhatc.inhatc.dto;
 
 import java.time.LocalDateTime;
 
-import kr.co.inhatc.inhatc.entity.*;
-
 import kr.co.inhatc.inhatc.entity.PostEntity;
 import lombok.Getter;
 

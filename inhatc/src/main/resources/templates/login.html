@@ -70,14 +70,15 @@
 
 <body>
     <h1>Login</h1>
-    <form action="/member/login" method="post">
+    <!-- action을 /api/members/login 으로 변경하고, input name 일치 -->
+    <form action="/api/members/login" method="post">
         <div>
-            <label for="memberEmail">이메일:</label>
-            <input type="text" id="memberEmail" name="memberEmail" required>
+            <label for="email">이메일:</label>
+            <input type="text" id="email" name="email" required>
         </div>
         <div>
-            <label for="memberPassword">비밀번호:</label>
-            <input type="password" id="memberPassword" name="memberPassword" required>
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
         </div>
         <button type="submit">로그인</button>
     </form>

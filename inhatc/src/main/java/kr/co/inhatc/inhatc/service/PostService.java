@@ -1,35 +1,30 @@
 package kr.co.inhatc.inhatc.service;
 
-import kr.co.inhatc.inhatc.dto.PostRequestDTO;
-import kr.co.inhatc.inhatc.entity.PostEntity;
-import kr.co.inhatc.inhatc.entity.LikeEntity;
-import kr.co.inhatc.inhatc.entity.MemberEntity;
-import kr.co.inhatc.inhatc.repository.LikeRepository;
-import kr.co.inhatc.inhatc.repository.MemberRepository;
-import kr.co.inhatc.inhatc.repository.PostRepository;
-import kr.co.inhatc.inhatc.dto.PostResponseDTO;
-import kr.co.inhatc.inhatc.exception.*;
-
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.co.inhatc.inhatc.dto.PostRequestDTO;
+import kr.co.inhatc.inhatc.dto.PostResponseDTO;
+import kr.co.inhatc.inhatc.entity.LikeEntity;
+import kr.co.inhatc.inhatc.entity.MemberEntity;
+import kr.co.inhatc.inhatc.entity.PostEntity;
+import kr.co.inhatc.inhatc.exception.CustomException;
+import kr.co.inhatc.inhatc.exception.ErrorCode;
+import kr.co.inhatc.inhatc.repository.LikeRepository;
+import kr.co.inhatc.inhatc.repository.MemberRepository;
+import kr.co.inhatc.inhatc.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -48,18 +43,6 @@ public class PostService {
         List<PostEntity> list = postRepository.findByWriter(writer);
         return list.stream().map(PostResponseDTO::new).collect(Collectors.toList());
     }
-
-    /**
-     * 게시글 수정
-     */
-    // @Transactional
-    // public Long update(final Long id, final PostRequestDTO params) {
-
-    // PostEntity entity = postRepository.findById(id).orElseThrow(() -> new
-    // CustomException(ErrorCode.POSTS_NOT_FOUND));
-    // entity.update(params.getContent(), params.getWriter());
-    // return id;
-    // }
 
     /**
      * 게시글 삭제
@@ -107,28 +90,26 @@ public class PostService {
     }
 
     public boolean toggleLove(Long postId, String email) {
-        PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POSTS_NOT_FOUND));
-        MemberEntity user = memberRepository.findByMemberEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.METHOD_NOT_ALLOWED));
-
+        PostEntity post = postRepository.findById(postId).orElseThrow(() -> 
+            new CustomException(ErrorCode.POSTS_NOT_FOUND)
+        );
+        MemberEntity user = memberRepository.findByMemberEmail(email).orElseThrow(() -> 
+            new CustomException(ErrorCode.METHOD_NOT_ALLOWED)
+        );
         Optional<LikeEntity> existingLike = likeRepository.findByPostAndUser(post, user);
-
         if (existingLike.isPresent()) {
             likeRepository.delete(existingLike.get());
             post.decreaseLoveCount();
-            postRepository.save(post);
-            return false; // 좋아요 취소
         } else {
-            LikeEntity newLike = new LikeEntity();
-            newLike.setPost(post);
-            newLike.setUser(user);
+            LikeEntity newLike = new LikeEntity(post, user);
             likeRepository.save(newLike);
             post.increaseLoveCount();
-            postRepository.save(post);
-            return true; // 좋아요 추가
         }
+        postRepository.save(post);
+        return existingLike.isEmpty(); // 새로 좋아요를 눌렀다면 true, 해제했다면 false // 08/10 internal server error 에러 해결
     }
+    
+
 
     
     /*
@@ -140,9 +121,9 @@ public class PostService {
             throw new IOException("업로드 실패: 파일이 비어 있습니다.");
         }
 
-        String userDirectory = Paths.get("C:", "Users", "82102", "OneDrive", "바탕 화면", "spring test", "inhatc", "src",
+        String userDirectory = Path.of("C:", "Users", "jdajs", "Downloads", "spring test", "inhatc", "src",
                 "main", "resources", userEmail).toString();
-        Path userPath = Paths.get(userDirectory);
+        Path userPath = Path.of(userDirectory);
         if (!Files.exists(userPath)) {
             Files.createDirectories(userPath); // 사용자 디렉토리가 없다면 생성
         }
