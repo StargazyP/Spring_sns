@@ -351,7 +351,7 @@ mvn spring-boot:run
 
 ---
 
-## 학습 내용
+## 구현 내용
 
 - Spring Boot 3.x 기반 RESTful API 설계
 - JPA를 활용한 데이터베이스 연동
@@ -361,6 +361,7 @@ mvn spring-boot:run
 - 파일 업로드/다운로드 처리
 - 예외 처리 및 글로벌 핸들러 구현
 
----
+---![Animation2](https://github.com/user-attachments/assets/50a801ca-3d45-4927-882c-017a88aa74b5)
+
 
 
