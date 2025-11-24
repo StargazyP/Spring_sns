@@ -11,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,11 +43,11 @@ public class MemberController {
     /**
      * 회원가입
      */
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody MemberDTO memberDTO) {
-        memberService.save(memberDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
-    }
+    // @PostMapping("/register")
+    // public ResponseEntity<String> register(@RequestBody MemberDTO memberDTO) {
+    // memberService.save(memberDTO);
+    // return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
+    // }
 
     /**
      * 로그인
@@ -64,8 +63,9 @@ public class MemberController {
         if (memberDTO != null) {
             // 세션에 이메일 저장
             session.setAttribute("loginEmail", email);
-            // 로그인 성공 시 main.html로 리다이렉트
-            return "main";
+            System.out.println("✅ 세션에 저장된 이메일: " + session.getAttribute("loginEmail"));
+
+            return "redirect:/main";
         } else {
             // 로그인 실패 시 에러 메시지 전달 후 로그인 페이지로
             model.addAttribute("error", "이메일 또는 비밀번호가 올바르지 않습니다.");
@@ -77,9 +77,9 @@ public class MemberController {
      * 로그아웃
      */
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpSession session) {
-        session.invalidate();
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+    public String logout(HttpSession session) {
+        session.invalidate(); // 세션 종료
+        return "redirect:/"; // login.html로 이동
     }
 
     /**
@@ -87,8 +87,12 @@ public class MemberController {
      */
     @GetMapping("/session")
     public ResponseEntity<Map<String, String>> getSessionMember(HttpSession session) {
-        String loginEmail = (String) session.getAttribute("loginEmail");
         Map<String, String> response = new HashMap<>();
+        if (session == null) {
+            response.put("loginEmail", null);
+            return ResponseEntity.ok(response);
+        }
+        String loginEmail = (String) session.getAttribute("loginEmail");
         response.put("loginEmail", loginEmail);
         return ResponseEntity.ok(response);
     }

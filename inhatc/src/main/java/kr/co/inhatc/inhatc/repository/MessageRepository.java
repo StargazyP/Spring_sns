@@ -22,4 +22,9 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
     List<MessageEntity> findBySenderAndReceiverOrSenderAndReceiver(
             String sender1, String receiver1,
             String sender2, String receiver2);
+    
+    // 특정 사용자와 메시지를 주고받은 상대방 목록 조회 (최신 메시지 순)
+    @Query("SELECT m FROM MessageEntity m WHERE (m.sender = :userEmail OR m.receiver = :userEmail) " +
+           "ORDER BY m.timestamp DESC")
+    List<MessageEntity> findConversationsByUserEmail(@Param("userEmail") String userEmail);
 }

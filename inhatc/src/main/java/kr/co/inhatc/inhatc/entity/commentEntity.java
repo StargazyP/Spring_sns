@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,6 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// CommentEntity
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,28 +32,34 @@ public class CommentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // PK
+    private Long id;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String comment; // 댓글 내용
+    private String comment;
 
-    @Column(name = "create_date", updatable = false) // 생성일 수정 불가 설정
+    /** ✅ member_email 기준으로 연결 */
+    @Column(name = "member_email", nullable = false)
+    private String memberEmail;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_email", referencedColumnName = "member_email", insertable = false, updatable = false)
+    private MemberEntity writer;
+
+    /** ✅ 게시글 연결 */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private PostEntity post;
+
+    @Column(name = "create_date", updatable = false)
     @CreatedDate
-    private LocalDateTime createDate; // 생성일
-
-    @ManyToOne
-    @JoinColumn(name = "post_id")
-    private PostEntity post; // 게시글과의 관계 설정
-
-    @ManyToOne
-    @JoinColumn(name = "member_email", referencedColumnName = "memberEmail")
-    private MemberEntity writer; // 작성자 정보
+    private LocalDateTime createDate;
 
     @Builder
     public CommentEntity(String comment, PostEntity post, MemberEntity writer) {
         this.comment = comment;
         this.post = post;
         this.writer = writer;
+        this.memberEmail = writer.getMemberEmail();
         this.createDate = LocalDateTime.now();
     }
 

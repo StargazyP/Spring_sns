@@ -19,17 +19,21 @@
 	</properties>
 	<dependencies>
 		<!-- JSON 처리 -->
-		 <dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
-		 </dependency>
+		</dependency>
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>webjars-locator-core</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.13.0</version> <!-- 최신 버전 사용 가능 -->
+		</dependency>
 
 		<dependency>
 			<groupId>org.webjars</groupId>

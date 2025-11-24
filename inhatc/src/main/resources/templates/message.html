@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>메시지</title>
+    <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
+    <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #0f1419;
+        line-height: 1.5;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+      }
+
+      .wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        height: 100vh; /* 고정 높이로 변경 */
+        border-left: 1px solid #eff3f4;
+        border-right: 1px solid #eff3f4;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* wrapper 자체는 스크롤하지 않음 */
+      }
+
+      /* X 스타일 네비게이션 바 */
+      .navbar {
+        position: sticky;
+        top: 0;
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #eff3f4;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        min-height: 64px;
+        gap: 20px;
+      }
+
+      .navbar img {
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        object-fit: contain;
+      }
+
+      .navbar img:hover {
+        background-color: #f7f9f9;
+      }
+
+      /* home.png: 256x256 (1:1) - 30% 증가 */
+      .navbar img[src="/images/home.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* user.png: 700x594 (약 1.18:1) - 30% 증가 */
+      .navbar img[src="/images/user.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      /* Message.png: 512x512 (1:1) - 30% 증가 */
+      .navbar img[src="/Message.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* alram.png: 700x590 (약 1.19:1) - 30% 증가 */
+      .navbar img[src="/images/alram.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      /* logout.png - 30% 증가 */
+      .navbar img[src="/images/logout.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      .chat-header {
+        padding: 16px;
+        border-bottom: 1px solid #eff3f4;
+        background-color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0; /* 높이가 줄어들지 않도록 */
+      }
+
+      .chat-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f1419;
+        margin: 0;
+      }
+
+      .back-button {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        color: #0f1419;
+      }
+
+      .back-button:hover {
+        background-color: #f7f9f9;
+      }
+
+      /* 목록 모드 컨테이너 */
+      #listMode {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+
+      /* 대화 상대 목록 스타일 */
+      .conversation-list {
+        flex: 1;
+        overflow-y: auto;
+        background-color: #ffffff;
+        min-height: 0;
+        max-height: 100%;
+      }
+
+      .conversation-item {
+        padding: 16px;
+        border-bottom: 1px solid #eff3f4;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .conversation-item:hover {
+        background-color: #f7f9f9;
+      }
+
+      .conversation-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: #1d9bf0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .conversation-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .conversation-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f1419;
+        margin-bottom: 4px;
+      }
+
+      .conversation-preview {
+        font-size: 15px;
+        color: #536471;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .conversation-time {
+        font-size: 13px;
+        color: #536471;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .empty-conversations {
+        text-align: center;
+        padding: 60px 20px;
+        color: #536471;
+        font-size: 15px;
+      }
+
+      /* 채팅 모드 컨테이너 */
+      #chatMode {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0; /* flex 컨테이너에서 스크롤이 작동하도록 */
+        overflow: hidden; /* 자식 요소의 스크롤만 허용 */
+        height: 100%; /* 부모의 높이를 모두 사용 */
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0; /* flex 컨테이너에서 스크롤이 작동하도록 */
+        max-height: 100%; /* 부모 컨테이너의 높이를 넘지 않도록 */
+      }
+
+      /* 스크롤바 스타일 개선 (WebKit 브라우저) */
+      .chat-messages::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .chat-messages::-webkit-scrollbar-track {
+        background: #f7f9f9;
+        border-radius: 4px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: #536471;
+        border-radius: 4px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #0f1419;
+      }
+
+      /* Firefox 스크롤바 스타일 */
+      .chat-messages {
+        scrollbar-width: thin;
+        scrollbar-color: #536471 #f7f9f9;
+      }
+
+      .message {
+        display: flex;
+        flex-direction: column;
+        max-width: 75%;
+        word-wrap: break-word;
+      }
+
+      .message.sent {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+
+      .message.received {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+
+      .message-content {
+        padding: 12px 16px;
+        border-radius: 20px;
+        font-size: 15px;
+        line-height: 1.4;
+      }
+
+      .message.sent .message-content {
+        background-color: #1d9bf0;
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+      }
+
+      .message.received .message-content {
+        background-color: #f7f9f9;
+        color: #0f1419;
+        border-bottom-left-radius: 4px;
+      }
+
+      .message-time {
+        font-size: 12px;
+        color: #536471;
+        margin-top: 4px;
+        padding: 0 4px;
+      }
+
+      .chat-input-container {
+        padding: 12px 16px;
+        border-top: 1px solid #eff3f4;
+        background-color: #ffffff;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0; /* 높이가 줄어들지 않도록 */
+      }
+
+      #messageInput {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #eff3f4;
+        border-radius: 24px;
+        font-size: 15px;
+        outline: none;
+        font-family: inherit;
+        resize: none;
+        min-height: 44px;
+        max-height: 120px;
+      }
+
+      #messageInput:focus {
+        border-color: #1d9bf0;
+      }
+
+      #sendButton {
+        padding: 10px 20px;
+        background-color: #1d9bf0;
+        color: #ffffff;
+        border: none;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #sendButton:hover {
+        background-color: #1a8cd8;
+      }
+
+      #sendButton:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* 이미지 업로드 관련 스타일 */
+      .image-upload-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .image-upload-button {
+        padding: 8px 12px;
+        background-color: #f7f9f9;
+        color: #0f1419;
+        border: 1px solid #eff3f4;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .image-upload-button:hover {
+        background-color: #eff3f4;
+      }
+
+      .image-preview-container {
+        position: relative;
+        display: inline-block;
+        margin-top: 8px;
+      }
+
+      .image-preview {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 12px;
+        border: 1px solid #eff3f4;
+      }
+
+      .image-preview-remove {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+      }
+
+      .image-preview-remove:hover {
+        background-color: #536471;
+      }
+
+      .message-image {
+        max-width: 300px;
+        max-height: 300px;
+        border-radius: 12px;
+        margin-top: 8px;
+        cursor: pointer;
+      }
+
+      .message-image:hover {
+        opacity: 0.9;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #536471;
+        font-size: 15px;
+      }
+
+      /* 반응형 디자인 */
+      @media (max-width: 768px) {
+        .wrapper {
+          max-width: 100%;
+          border-left: none;
+          border-right: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Navigation Bar -->
+      <div class="navbar">
+        <!-- 홈 -->
+        <img
+          src="/images/home.png"
+          alt="home"
+          onclick="location.href='/main';"
+        />
+
+        <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
+        <img
+          src="/images/user.png"
+          alt="User"
+          onclick="location.href='/member/mypage';"
+        />
+
+        <!-- 메시지: Message.png -->
+        <img
+          src="/Message.png"
+          alt="Message"
+          onclick="location.href='/chat/message';"
+        />
+
+        <!-- 알람 / 게시물 확인 -->
+        <img
+          src="/images/alram.png"
+          alt="Alarm"
+          onclick="location.href='/posts/check';"
+        />
+
+        <!-- 로그아웃 -->
+        <img
+          src="/images/logout.png"
+          alt="Logout"
+          onclick="document.getElementById('logout').submit();"
+        />
+        <form id="logout" action="/api/members/logout" method="post"></form>
+      </div>
+
+      <!-- 목록 모드 -->
+      <div id="listMode" th:if="${isChatMode == null or isChatMode == false}">
+        <div class="chat-header">
+          <h2>메시지</h2>
+        </div>
+        <!-- 목록 모드용 디버깅 데이터 -->
+        <div id="listModeData" 
+             th:data-sender-email="${senderEmail}"
+             style="display: none;"></div>
+        <div class="conversation-list" id="conversationList">
+          <div class="loading">대화 상대를 불러오는 중...</div>
+        </div>
+      </div>
+
+      <!-- 채팅 모드 -->
+      <div id="chatMode" th:if="${isChatMode != null and isChatMode == true}">
+        <div class="chat-header">
+          <button class="back-button" onclick="goToListMode()" title="목록으로">←</button>
+          <h2 id="receiverName" th:text="${receiverName != null ? receiverName : receiverEmail}">메시지</h2>
+          <!-- 디버깅용: Thymeleaf 변수를 data 속성으로 전달 -->
+          <div id="debugData" 
+               th:data-sender-email="${senderEmail}" 
+               th:data-receiver-email="${receiverEmail}"
+               style="display: none;"></div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="loading">메시지를 불러오는 중...</div>
+        </div>
+
+        <div class="chat-input-container">
+          <div class="image-upload-container" style="width: 100%;">
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+              <button class="image-upload-button" onclick="document.getElementById('imageInput').click()">
+                📷 이미지
+              </button>
+              <textarea
+                id="messageInput"
+                placeholder="메시지를 입력하세요..."
+                rows="1"
+                style="flex: 1;"
+              ></textarea>
+              <button id="sendButton" onclick="sendMessage()">전송</button>
+            </div>
+            <div id="imagePreviewContainer" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script th:inline="javascript">
+      let stompClient = null;
+      const senderEmail = /*[[${senderEmail}]]*/ '';
+      const receiverEmail = /*[[${receiverEmail}]]*/ '';
+      const isChatMode = /*[[${isChatMode}]]*/ false;
+      let roomName = '';
+
+      // 디버깅 정보 출력
+      console.log("========================================");
+      console.log("[DEBUG] message.html 스크립트 로드됨");
+      console.log("  - senderEmail (Thymeleaf):", senderEmail);
+      console.log("  - receiverEmail (Thymeleaf):", receiverEmail);
+      console.log("  - isChatMode:", isChatMode);
+      console.log("  - senderEmail 타입:", typeof senderEmail);
+      console.log("  - receiverEmail 타입:", typeof receiverEmail);
+      console.log("========================================");
+
+      // 디버깅 정보를 화면에 표시
+      window.addEventListener('DOMContentLoaded', function() {
+        const debugInfo = document.createElement('div');
+        debugInfo.id = 'debugInfo';
+        debugInfo.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f7f9f9; padding: 12px; border-radius: 8px; font-size: 12px; z-index: 1000; max-width: 300px; border: 1px solid #eff3f4;';
+        debugInfo.innerHTML = `
+          <strong>🔍 디버깅 정보</strong><br/>
+          senderEmail: ${senderEmail || '(없음)'}<br/>
+          receiverEmail: ${receiverEmail || '(없음)'}<br/>
+          <button onclick="this.parentElement.style.display='none'" style="margin-top: 8px; padding: 4px 8px; font-size: 11px;">닫기</button>
+        `;
+        document.body.appendChild(debugInfo);
+      });
+
+      function getNormalizedRoomName(user1, user2) {
+        return user1 < user2 ? user1 + '_' + user2 : user2 + '_' + user1;
+      }
+
+      function connect() {
+        console.log("[DEBUG] connect() 함수 호출됨");
+        
+        // 전역 변수에서 값 가져오기
+        const currentSenderEmail = window.senderEmail || senderEmail;
+        const currentReceiverEmail = window.receiverEmail || receiverEmail;
+        
+        console.log("  - senderEmail:", currentSenderEmail);
+        console.log("  - receiverEmail:", currentReceiverEmail);
+        
+        if (!currentSenderEmail || !currentReceiverEmail) {
+          console.error("❌ 사용자 정보가 없어 연결할 수 없음");
+          return;
+        }
+        
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        
+        stompClient.connect({}, function (frame) {
+          console.log('Connected: ' + frame);
+          
+          roomName = getNormalizedRoomName(currentSenderEmail, currentReceiverEmail);
+          
+          // 채팅방 구독
+          stompClient.subscribe('/topic/' + roomName, function (message) {
+            const data = JSON.parse(message.body);
+            displayMessage(data);
+          });
+          
+          // 기존 메시지 로드
+          loadMessageHistory();
+        }, function(error) {
+          console.error('WebSocket 연결 오류:', error);
+          document.getElementById('chatMessages').innerHTML = 
+            '<div class="loading">연결에 실패했습니다. 페이지를 새로고침해주세요.</div>';
+        });
+      }
+
+      function loadMessageHistory() {
+        console.log("[DEBUG] loadMessageHistory() 함수 호출됨");
+        
+        // 전역 변수에서 값 가져오기
+        const currentSenderEmail = window.senderEmail || senderEmail;
+        const currentReceiverEmail = window.receiverEmail || receiverEmail;
+        
+        console.log("  - senderEmail:", currentSenderEmail);
+        console.log("  - receiverEmail:", currentReceiverEmail);
+        
+        if (!currentSenderEmail || currentSenderEmail.trim() === '') {
+          console.error("❌ senderEmail이 비어있음");
+          document.getElementById('chatMessages').innerHTML = 
+            '<div class="loading" style="color: #f4212e;">오류: 발신자 이메일을 불러올 수 없습니다.</div>';
+          return;
+        }
+        
+        if (!currentReceiverEmail || currentReceiverEmail.trim() === '') {
+          console.error("❌ receiverEmail이 비어있음");
+          document.getElementById('chatMessages').innerHTML = 
+            '<div class="loading" style="color: #f4212e;">오류: 수신자 이메일을 불러올 수 없습니다.</div>';
+          return;
+        }
+        
+        const url = `/api/messages/history?sender=${encodeURIComponent(currentSenderEmail)}&receiver=${encodeURIComponent(currentReceiverEmail)}`;
+        console.log("  - 요청 URL:", url);
+        
+        fetch(url)
+          .then(response => {
+            console.log("  - 응답 상태 코드:", response.status);
+            console.log("  - 응답 OK:", response.ok);
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+          })
+          .then(messages => {
+            console.log("  ✅ 메시지 히스토리 로드 성공:", messages);
+            console.log("  - 메시지 개수:", messages ? messages.length : 0);
+            
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '';
+            
+            if (messages && messages.length > 0) {
+              messages.forEach(message => {
+                displayMessage(message);
+              });
+              scrollToBottom();
+            } else {
+              messagesContainer.innerHTML = '<div class="loading">메시지가 없습니다.</div>';
+            }
+          })
+          .catch(error => {
+            console.error('❌ 메시지 히스토리 로드 오류:', error);
+            console.error('  - 에러 메시지:', error.message);
+            console.error('  - 에러 스택:', error.stack);
+            document.getElementById('chatMessages').innerHTML = 
+              `<div class="loading" style="color: #f4212e;">메시지를 불러오는 중 오류가 발생했습니다.<br/>${error.message}</div>`;
+          });
+      }
+
+      function displayMessage(message) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const loadingDiv = messagesContainer.querySelector('.loading');
+        if (loadingDiv) {
+          loadingDiv.remove();
+        }
+        
+        // 전역 변수에서 값 가져오기
+        const currentSenderEmail = window.senderEmail || senderEmail;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ' + (message.sender === currentSenderEmail ? 'sent' : 'received');
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        // 이미지가 있으면 이미지 표시
+        if (message.imagePath) {
+          const imageDiv = document.createElement('div');
+          const img = document.createElement('img');
+          img.src = message.imagePath;
+          img.alt = '메시지 이미지';
+          img.className = 'message-image';
+          img.onclick = function() {
+            // 이미지 클릭 시 확대 보기 (선택적)
+            window.open(message.imagePath, '_blank');
+          };
+          imageDiv.appendChild(img);
+          contentDiv.appendChild(imageDiv);
+        }
+        
+        // 텍스트 메시지가 있으면 표시
+        if (message.content && message.content.trim() !== '') {
+          const textDiv = document.createElement('div');
+          textDiv.textContent = message.content;
+          contentDiv.appendChild(textDiv);
+        }
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        if (message.timestamp) {
+          const date = new Date(message.timestamp);
+          timeDiv.textContent = date.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        messageDiv.appendChild(timeDiv);
+        messagesContainer.appendChild(messageDiv);
+        
+        scrollToBottom();
+      }
+
+      // 이미지 선택 처리
+      let selectedImageFile = null;
+      let selectedImagePath = null;
+
+      function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 파일 크기 제한 (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('이미지 크기는 10MB 이하여야 합니다.');
+          event.target.value = '';
+          return;
+        }
+
+        selectedImageFile = file;
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        
+        // 미리보기 생성
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewContainer.innerHTML = `
+            <div class="image-preview-container">
+              <img src="${e.target.result}" alt="미리보기" class="image-preview">
+              <button class="image-preview-remove" onclick="removeImagePreview()">×</button>
+            </div>
+          `;
+          previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function removeImagePreview() {
+        selectedImageFile = null;
+        selectedImagePath = null;
+        document.getElementById('imageInput').value = '';
+        document.getElementById('imagePreviewContainer').innerHTML = '';
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+      }
+
+      async function sendMessage() {
+        const input = document.getElementById('messageInput');
+        if (!input) {
+          console.warn("messageInput 요소를 찾을 수 없습니다.");
+          return;
+        }
+        
+        const messageContent = input.value.trim();
+        
+        // 텍스트와 이미지가 모두 없으면 전송하지 않음
+        if ((!messageContent || messageContent.trim() === '') && !selectedImageFile) {
+          return;
+        }
+        
+        if (!stompClient) {
+          console.warn("WebSocket 연결이 없습니다.");
+          return;
+        }
+        
+        // 전역 변수에서 값 가져오기
+        const currentSenderEmail = window.senderEmail || senderEmail;
+        const currentReceiverEmail = window.receiverEmail || receiverEmail;
+        
+        try {
+          let imagePath = null;
+          
+          // 이미지가 있으면 먼저 업로드
+          if (selectedImageFile) {
+            console.log("이미지 업로드 시작...");
+            const formData = new FormData();
+            formData.append('file', selectedImageFile);
+            formData.append('userEmail', currentSenderEmail);
+            
+            const uploadResponse = await fetch('/api/messages/upload-image', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!uploadResponse.ok) {
+              throw new Error('이미지 업로드 실패');
+            }
+            
+            const uploadResult = await uploadResponse.json();
+            imagePath = uploadResult.imagePath;
+            console.log("이미지 업로드 완료:", imagePath);
+          }
+          
+          // 메시지 전송
+          const message = {
+            sender: currentSenderEmail,
+            receiver: currentReceiverEmail,
+            content: messageContent || '',
+            timestamp: new Date().toISOString()
+          };
+          
+          if (imagePath) {
+            message.imagePath = imagePath;
+          }
+          
+          stompClient.send('/app/chat/' + roomName + '/sendMessage', {}, JSON.stringify(message));
+          
+          // 입력 필드 초기화
+          input.value = '';
+          input.style.height = 'auto';
+          removeImagePreview();
+          scrollToBottom();
+          
+        } catch (error) {
+          console.error('메시지 전송 오류:', error);
+          alert('메시지 전송 실패: ' + error.message);
+        }
+      }
+
+      function scrollToBottom() {
+        const messagesContainer = document.getElementById('chatMessages');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }
+
+      // Enter 키로 메시지 전송 (Shift+Enter는 줄바꿈)
+      // 채팅 모드에서만 messageInput 요소가 존재하므로 존재 여부 확인
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+
+        // 텍스트 영역 자동 높이 조절
+        messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+      }
+
+      // 목록 모드로 이동
+      function goToListMode() {
+        window.location.href = '/chat/message';
+      }
+
+      // 대화 상대 목록 로드
+      function loadConversations() {
+        console.log("[DEBUG] loadConversations() 함수 호출됨");
+        
+        // 목록 모드용 data 속성에서 값 가져오기
+        const listModeData = document.getElementById('listModeData');
+        let currentSenderEmail = window.senderEmail || senderEmail;
+        
+        if (listModeData) {
+          const dataSender = listModeData.getAttribute('data-sender-email');
+          console.log("  - listModeData에서 가져온 senderEmail:", dataSender);
+          if (dataSender) {
+            currentSenderEmail = dataSender;
+            window.senderEmail = dataSender;
+          }
+        }
+        
+        console.log("  - 최종 currentSenderEmail:", currentSenderEmail);
+        
+        if (!currentSenderEmail || currentSenderEmail.trim() === '') {
+          console.error("❌ senderEmail이 비어있어 대화 상대 목록을 불러올 수 없음");
+          document.getElementById('conversationList').innerHTML = 
+            '<div class="empty-conversations">오류: 사용자 정보를 불러올 수 없습니다.<br/>senderEmail: ' + (currentSenderEmail || '(없음)') + '</div>';
+          return;
+        }
+
+        // 세션 유저의 message_entity를 조회하여 대화 상대 목록 가져오기
+        // API: /api/messages/conversations?userEmail={세션유저이메일}
+        const url = `/api/messages/conversations?userEmail=${encodeURIComponent(currentSenderEmail)}`;
+        console.log("  - 요청 URL:", url);
+        console.log("  - 세션 유저 (senderEmail):", currentSenderEmail);
+
+        fetch(url)
+          .then(response => {
+            console.log("  - 응답 상태 코드:", response.status);
+            console.log("  - 응답 OK:", response.ok);
+            console.log("  - 응답 Content-Type:", response.headers.get('Content-Type'));
+            
+            if (!response.ok) {
+              return response.text().then(text => {
+                console.error("  ❌ API 오류 응답:", text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+              });
+            }
+            return response.json();
+          })
+          .then(conversations => {
+            console.log("  ✅ 대화 상대 목록 로드 성공");
+            console.log("  - 응답 타입:", typeof conversations);
+            console.log("  - 응답 데이터:", JSON.stringify(conversations, null, 2));
+            console.log("  - 대화 상대 수:", conversations ? conversations.length : 0);
+            
+            const listContainer = document.getElementById('conversationList');
+            if (!listContainer) {
+              console.error("  ❌ conversationList 요소를 찾을 수 없음");
+              return;
+            }
+            
+            listContainer.innerHTML = '';
+            
+            if (conversations && Array.isArray(conversations) && conversations.length > 0) {
+              console.log("  ✅ 대화 상대 목록 렌더링 시작");
+              conversations.forEach((conversation, index) => {
+                console.log(`  - 대화 상대 [${index}]:`, conversation);
+                
+                const item = document.createElement('div');
+                item.className = 'conversation-item';
+                item.onclick = function() {
+                  // 목록에서 상대방을 클릭하면:
+                  // - senderEmail: 세션 유저 (현재 로그인한 유저, window.senderEmail)
+                  // - receiverEmail: 클릭한 상대방 (conversation.otherUserEmail)
+                  const currentSenderEmail = window.senderEmail || senderEmail;
+                  const receiverEmail = conversation.otherUserEmail;
+                  console.log("  - 대화 상대 클릭");
+                  console.log("    - senderEmail (세션 유저):", currentSenderEmail);
+                  console.log("    - receiverEmail (상대방):", receiverEmail);
+                  // 채팅 모드로 이동: /chat/message?receiverEmail={상대방이메일}
+                  window.location.href = `/chat/message?receiverEmail=${encodeURIComponent(receiverEmail)}`;
+                };
+                
+                // 아바타 (이름 첫 글자)
+                const avatar = document.createElement('div');
+                avatar.className = 'conversation-avatar';
+                avatar.textContent = conversation.otherUserName ? conversation.otherUserName.charAt(0).toUpperCase() : '?';
+                
+                // 내용
+                const content = document.createElement('div');
+                content.className = 'conversation-content';
+                
+                const name = document.createElement('div');
+                name.className = 'conversation-name';
+                name.textContent = conversation.otherUserName || conversation.otherUserEmail;
+                
+                const preview = document.createElement('div');
+                preview.className = 'conversation-preview';
+                preview.textContent = conversation.lastMessage || '';
+                
+                content.appendChild(name);
+                content.appendChild(preview);
+                
+                // 시간
+                const time = document.createElement('div');
+                time.className = 'conversation-time';
+                if (conversation.lastMessageTime) {
+                  const date = new Date(conversation.lastMessageTime);
+                  const now = new Date();
+                  const diff = now - date;
+                  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                  
+                  if (days === 0) {
+                    time.textContent = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                  } else if (days === 1) {
+                    time.textContent = '어제';
+                  } else if (days < 7) {
+                    time.textContent = days + '일 전';
+                  } else {
+                    time.textContent = date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+                  }
+                }
+                
+                item.appendChild(avatar);
+                item.appendChild(content);
+                item.appendChild(time);
+                listContainer.appendChild(item);
+              });
+            } else {
+              console.log("  ⚠️ 대화 상대가 없음");
+              listContainer.innerHTML = '<div class="empty-conversations">메시지를 주고받은 사용자가 없습니다.</div>';
+            }
+          })
+          .catch(error => {
+            console.error('❌ 대화 상대 목록 로드 오류:', error);
+            console.error('  - 에러 메시지:', error.message);
+            console.error('  - 에러 스택:', error.stack);
+            const listContainer = document.getElementById('conversationList');
+            if (listContainer) {
+              listContainer.innerHTML = 
+                `<div class="empty-conversations">대화 상대 목록을 불러오는 중 오류가 발생했습니다.<br/>${error.message}</div>`;
+            }
+          });
+      }
+
+      // 페이지 로드 시 연결
+      window.onload = function() {
+        console.log("[DEBUG] window.onload 실행됨");
+        console.log("  - isChatMode:", isChatMode);
+        
+        // data 속성에서 값 가져오기 (Thymeleaf 인라인 실패 시 대비)
+        const debugData = document.getElementById('debugData');
+        const listModeData = document.getElementById('listModeData');
+        let finalSenderEmail = senderEmail;
+        let finalReceiverEmail = receiverEmail;
+        
+        // 채팅 모드용 데이터
+        if (debugData) {
+          const dataSender = debugData.getAttribute('data-sender-email');
+          const dataReceiver = debugData.getAttribute('data-receiver-email');
+          console.log("  - debugData data-sender-email:", dataSender);
+          console.log("  - debugData data-receiver-email:", dataReceiver);
+          
+          if ((!finalSenderEmail || finalSenderEmail.trim() === '') && dataSender) {
+            console.log("  ⚠️ senderEmail이 비어있어 debugData에서 가져옴");
+            finalSenderEmail = dataSender;
+          }
+          
+          if ((!finalReceiverEmail || finalReceiverEmail.trim() === '') && dataReceiver) {
+            console.log("  ⚠️ receiverEmail이 비어있어 debugData에서 가져옴");
+            finalReceiverEmail = dataReceiver;
+          }
+        }
+        
+        // 목록 모드용 데이터
+        if (listModeData) {
+          const dataSender = listModeData.getAttribute('data-sender-email');
+          console.log("  - listModeData data-sender-email:", dataSender);
+          
+          if ((!finalSenderEmail || finalSenderEmail.trim() === '') && dataSender) {
+            console.log("  ⚠️ senderEmail이 비어있어 listModeData에서 가져옴");
+            finalSenderEmail = dataSender;
+          }
+        }
+        
+        console.log("  - 최종 senderEmail:", finalSenderEmail);
+        console.log("  - 최종 receiverEmail:", finalReceiverEmail);
+        
+        // 전역 변수 업데이트
+        if (finalSenderEmail) {
+          window.senderEmail = finalSenderEmail;
+        }
+        if (finalReceiverEmail) {
+          window.receiverEmail = finalReceiverEmail;
+        }
+        
+        // 모드에 따라 다른 동작
+        if (isChatMode && finalReceiverEmail) {
+          // 채팅 모드
+          console.log("  ✅ 채팅 모드 - WebSocket 연결 시작");
+          if (!finalSenderEmail || finalSenderEmail.trim() === '') {
+            console.error("❌ senderEmail이 비어있음");
+            document.getElementById('chatMessages').innerHTML = 
+              '<div class="loading" style="color: #f4212e;">오류: 발신자 정보를 불러올 수 없습니다.</div>';
+            return;
+          }
+          connect();
+        } else {
+          // 목록 모드
+          console.log("  ✅ 목록 모드 - 대화 상대 목록 로드");
+          loadConversations();
+        }
+      };
+    </script>
+  </body>
+</html>
+

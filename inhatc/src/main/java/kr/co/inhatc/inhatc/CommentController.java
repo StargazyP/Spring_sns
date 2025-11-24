@@ -3,9 +3,11 @@ package kr.co.inhatc.inhatc;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,16 +19,17 @@ import kr.co.inhatc.inhatc.service.CommentService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/posts/{postId}/comments")
+@RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class CommentController {
 
     private final CommentService commentService;
 
     /**
-     * 게시글별 댓글 목록 조회
+     * 특정 게시글의 모든 댓글 조회
+     * GET /api/posts/{postId}/comments
      */
-    @GetMapping
+    @GetMapping("/{postId}/comments")
     public ResponseEntity<List<CommentResponseDTO>> getComments(@PathVariable Long postId) {
         List<CommentResponseDTO> comments = commentService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
@@ -34,9 +37,10 @@ public class CommentController {
 
     /**
      * 댓글 작성
+     * POST /api/posts/{postId}/comments
      */
-    @PostMapping
-    public ResponseEntity<CommentResponseDTO> addComment(
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<CommentResponseDTO> createComment(
             @PathVariable Long postId,
             @RequestBody CommentRequestDTO commentRequestDTO,
             HttpSession session) {
@@ -50,6 +54,29 @@ public class CommentController {
 
         CommentResponseDTO savedComment = commentService.addComment(commentRequestDTO);
         return ResponseEntity.ok(savedComment);
+    }
+
+    @PutMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<String> updateComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestBody CommentRequestDTO requestDTO
+    ) {
+        commentService.updateComment(postId, commentId, requestDTO);
+        return ResponseEntity.ok("댓글이 수정되었습니다.");
+    }
+
+        /**
+     * 댓글 삭제
+     * DELETE /api/posts/{postId}/comments/{commentId}
+     */
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<String> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId
+    ) {
+        commentService.deleteComment(postId, commentId);
+        return ResponseEntity.ok("댓글이 삭제되었습니다.");
     }
 
 }

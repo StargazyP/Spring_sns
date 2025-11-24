@@ -1,114 +1,83 @@
 package kr.co.inhatc.inhatc;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
-import kr.co.inhatc.inhatc.dto.ChatMessageDTO;
-import kr.co.inhatc.inhatc.dto.ChatRoomDTO;
-import kr.co.inhatc.inhatc.dto.MessageDTO;
-import kr.co.inhatc.inhatc.entity.ChatRoom;
-import kr.co.inhatc.inhatc.repository.ChatRoomRepository;
-import kr.co.inhatc.inhatc.repository.MemberRepository;
-import kr.co.inhatc.inhatc.service.ChatRoomService;
-import kr.co.inhatc.inhatc.service.MessageService;
+import jakarta.servlet.http.HttpSession;
+import kr.co.inhatc.inhatc.service.MemberService;
+import kr.co.inhatc.inhatc.dto.MemberDTO;
+import lombok.RequiredArgsConstructor;
 
-@RestController
+@Controller
+@RequestMapping("/chat")
+@RequiredArgsConstructor
 public class ChatController {
 
-    private final ChatRoomService chatRoomService;
-    private final MemberRepository memberRepository;
-    private final ChatRoomRepository chatRoomRepository;
-    private final MessageService messageService;
+    private final MemberService memberService;
 
-    @Autowired
-    public ChatController(ChatRoomService chatRoomService,
-            MemberRepository memberRepository,
-            ChatRoomRepository chatRoomRepository,
-            MessageService messageService) {
-        this.chatRoomService = chatRoomService;
-        this.memberRepository = memberRepository;
-        this.chatRoomRepository = chatRoomRepository;
-        this.messageService = messageService;
-    }
-
-    @MessageMapping("/chat/{roomName}/sendMessage")
-    @SendTo("/topic/{roomName}")
-    public ChatMessageDTO sendMessage(@DestinationVariable String roomName, ChatMessageDTO messageDTO) {
-        // 디버깅 메시지 추가
-        System.out.println("Received message: " + messageDTO);
+    /**
+     * 메시지 페이지
+     * - receiverEmail이 없으면: 세션 유저의 message_entity를 조회하여 대화 상대 목록 표시 (목록 모드)
+     * - receiverEmail이 있으면: 세션 유저(senderEmail)와 receiverEmail 간의 채팅 화면 표시 (채팅 모드)
+     * 
+     * @param receiverEmail 수신자 이메일 (선택적, 없으면 목록 모드)
+     * @param session HTTP 세션 (세션에서 loginEmail을 가져와 senderEmail로 사용)
+     * @param model 뷰 모델
+     * @return message.html 템플릿
+     */
+    @GetMapping("/message")
+    public String chatPage(
+            @RequestParam(value = "receiverEmail", required = false) String receiverEmail,
+            HttpSession session,
+            Model model) {
+        System.out.println("========================================");
+        System.out.println("[DEBUG] ChatController.chatPage 호출됨");
+        System.out.println("  - receiverEmail 파라미터: " + receiverEmail);
         
-        // ChatMessageDTO를 MessageDTO로 변환
-        MessageDTO message = new MessageDTO();
-        message.setSender(messageDTO.getSender());
-        message.setReceiver(messageDTO.getReceiver());
-        message.setContent(messageDTO.getContent());
-        message.setTimestamp(LocalDateTime.now()); // 타임스탬프 추가
-
-        // 메시지를 저장
-        messageService.saveMessage(message);
+        // 세션에서 로그인한 유저의 이메일을 가져옴 (이것이 senderEmail이 됨)
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        System.out.println("  - 세션 loginEmail (senderEmail): " + loginEmail);
         
-        // 디버깅: 저장된 메시지 출력
-        System.out.println("Saved message: " + message);
-        
-        // 원래의 ChatMessageDTO 반환
-        return messageDTO;
-    }
-
-    @MessageMapping("/chat/{receiverId}/start")
-    public ChatRoomDTO startChat(@DestinationVariable String receiverId, SimpMessageHeaderAccessor headerAccessor) {
-        String senderId = headerAccessor.getFirstNativeHeader("username");
-
-        // 디버깅: senderId 확인
-        System.out.println("Sender ID from header: " + senderId);
-
-        if (senderId == null) {
-            throw new IllegalArgumentException("Sender ID가 헤더에 없습니다.");
+        if (loginEmail == null) {
+            System.out.println("  ❌ 세션에 loginEmail이 없음 - 로그인 페이지로 리다이렉트");
+            return "redirect:/";
         }
 
-        // 채팅방 생성 또는 기존 채팅방 반환
-        ChatRoom chatRoom = chatRoomService.createChatRoom(senderId, receiverId);
-
-        // 디버깅: 채팅방 정보 출력
-        System.out.println("Chat room created or retrieved: " + chatRoom);
-
-        return ChatRoomDTO.toChatRoomDTO(chatRoom);
-    }
-
-    // 두 사용자의 채팅 기록을 가져옵니다.
-    @GetMapping("/api/chat/history")
-    public List<MessageDTO> getChatHistory(@RequestParam String sender, @RequestParam String receiver) {
-        // 디버깅: 전달받은 sender, receiver 값 확인
-        System.out.println("Fetching chat history for sender: " + sender + " and receiver: " + receiver);
+        // senderEmail은 항상 세션 유저 (로그인한 유저)
+        model.addAttribute("senderEmail", loginEmail);
         
-        List<MessageDTO> history = messageService.getMessageHistory(sender, receiver);
+        // receiverEmail이 있으면 채팅 모드, 없으면 목록 모드
+        if (receiverEmail != null && !receiverEmail.trim().isEmpty()) {
+            System.out.println("  ✅ 채팅 모드");
+            System.out.println("    - senderEmail (세션 유저): " + loginEmail);
+            System.out.println("    - receiverEmail (상대방): " + receiverEmail);
+            model.addAttribute("receiverEmail", receiverEmail);
+            model.addAttribute("isChatMode", true);
+            
+            // 수신자 이름 조회
+            try {
+                MemberDTO receiver = memberService.getMemberByEmail(receiverEmail);
+                model.addAttribute("receiverName", receiver.getMemberName());
+                System.out.println("  ✅ 수신자 이름: " + receiver.getMemberName());
+            } catch (Exception e) {
+                System.err.println("  ⚠️ 수신자 정보 조회 실패: " + e.getMessage());
+                model.addAttribute("receiverName", receiverEmail);
+            }
+        } else {
+            System.out.println("  ✅ 목록 모드 - 세션 유저의 message_entity를 조회하여 대화 상대 목록 표시");
+            System.out.println("    - senderEmail (세션 유저): " + loginEmail);
+            model.addAttribute("isChatMode", false);
+            // 대화 상대 목록은 JavaScript에서 /api/messages/conversations?userEmail={senderEmail} API로 가져옴
+        }
         
-        // 디버깅: 채팅 기록 확인
-        System.out.println("Chat history retrieved: " + history);
+        System.out.println("  ✅ 모델에 속성 추가 완료");
+        System.out.println("========================================");
         
-        return history;
-    }
-
-    // 특정 수신자에게 메시지를 보낸 발신자 리스트를 가져옵니다.
-    @GetMapping("/api/chat/sender")
-    public ResponseEntity<List<MessageDTO>> getSender(@RequestParam String receiver) {
-        // 디버깅: 전달받은 receiver 값 확인
-        System.out.println("Fetching senders for receiver: " + receiver);
-        
-        List<MessageDTO> senders = messageService.findMessagesByReceiverOrSender(receiver);
-        
-        // 디버깅: 발신자 리스트 확인
-        System.out.println("Senders found: " + senders);
-        
-        return ResponseEntity.ok(senders);
+        return "message";
     }
 }
+
+

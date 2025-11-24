@@ -6,6 +6,7 @@ public class MessageDTO {
     private String sender;
     private String receiver;
     private String content;
+    private String imagePath; // 이미지 경로 필드 추가
     private LocalDateTime timestamp;
 
     // Getters and Setters
@@ -39,5 +40,13 @@ public class MessageDTO {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
 }

@@ -1,0 +1,113 @@
+package kr.co.inhatc.inhatc;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import jakarta.servlet.http.HttpSession;
+import kr.co.inhatc.inhatc.dto.NotificationDTO;
+import kr.co.inhatc.inhatc.service.NotificationService;
+import lombok.RequiredArgsConstructor;
+
+@Controller
+@RequestMapping("/posts")
+@RequiredArgsConstructor
+public class NotificationController {
+
+    private final NotificationService notificationService;
+
+    /**
+     * 알림 확인 페이지 (HTML)
+     */
+    @GetMapping("/check")
+    public String checkNotifications(HttpSession session, Model model) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return "redirect:/";
+        }
+
+        try {
+            List<NotificationDTO> notifications = notificationService.getUnreadNotifications(loginEmail);
+            model.addAttribute("notifications", notifications);
+            model.addAttribute("loginEmail", loginEmail);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 에러 발생 시 빈 리스트로 처리
+            model.addAttribute("notifications", java.util.Collections.emptyList());
+            model.addAttribute("loginEmail", loginEmail);
+            model.addAttribute("error", "알림을 불러오는 중 오류가 발생했습니다.");
+        }
+
+        return "notification"; // notification.html 템플릿 사용
+    }
+
+    /**
+     * 알림 조회 API (JSON)
+     */
+    @GetMapping("/notifications")
+    @ResponseBody
+    public ResponseEntity<List<NotificationDTO>> getNotifications(HttpSession session) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            List<NotificationDTO> notifications = notificationService.getUnreadNotifications(loginEmail);
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 알림 읽음 처리 API
+     */
+    @PostMapping("/notifications/read")
+    @ResponseBody
+    public ResponseEntity<String> markNotificationAsRead(
+            @RequestParam Long notificationId,
+            HttpSession session) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            notificationService.markAsRead(notificationId);
+            return ResponseEntity.ok("알림이 읽음 처리되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("알림 읽음 처리 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 모든 알림 읽음 처리 API
+     */
+    @PostMapping("/notifications/read-all")
+    @ResponseBody
+    public ResponseEntity<String> markAllNotificationsAsRead(HttpSession session) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            notificationService.markAllAsRead(loginEmail);
+            return ResponseEntity.ok("모든 알림이 읽음 처리되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("알림 읽음 처리 실패: " + e.getMessage());
+        }
+    }
+}
+

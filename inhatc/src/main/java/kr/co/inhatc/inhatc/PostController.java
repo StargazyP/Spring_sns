@@ -1,6 +1,5 @@
 package kr.co.inhatc.inhatc;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,13 +10,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import kr.co.inhatc.inhatc.dto.PostRequestDTO;
+import jakarta.servlet.http.HttpSession;
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
 import kr.co.inhatc.inhatc.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -26,23 +24,30 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
-
     private final PostService postService;
 
     /**
-     * 특정 사용자 게시글 조회
+     * 특정 사용자 게시글 조회 (memberId 기준)
      */
-    @GetMapping("/user/{writer}")
-    public ResponseEntity<List<PostResponseDTO>> getPostsByWriter(@PathVariable String writer) {
-        return ResponseEntity.ok(postService.findByUserID(writer));
+    @GetMapping("/user/id/{memberId}")
+    public ResponseEntity<List<PostResponseDTO>> getPostsByMemberId(@PathVariable Long memberId) {
+        return ResponseEntity.ok(postService.findByMemberId(memberId));
     }
 
     /**
-     * 게시글 전체 조회
+     * 특정 사용자 게시글 조회 (memberName 기준)
      */
+    @GetMapping("/user/name/{memberName}")
+    public ResponseEntity<List<PostResponseDTO>> getPostsByMemberName(@PathVariable String memberName) {
+        return ResponseEntity.ok(postService.findByMemberName(memberName));
+    }
+
+    // 전체 게시글 조회 (삭제되지 않은 것만)
     @GetMapping
     public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
-        return ResponseEntity.ok(postService.findAll());
+        List<PostResponseDTO> posts = postService.findAll();
+        System.out.println("DTO 수: " + posts.size());
+        return ResponseEntity.ok(posts);
     }
 
     /**
@@ -53,21 +58,11 @@ public class PostController {
         return ResponseEntity.ok(postService.findAllByDeleteYn(deleteYn));
     }
 
-    /**
-     * 게시글 상세 조회 (조회수 증가 포함)
-     */
+    // 개별 게시글 조회
     @GetMapping("/{id}")
-    public ResponseEntity<PostResponseDTO> getPostDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(postService.findById(id));
-    }
-
-    /**
-     * 게시글 생성
-     */
-    @PostMapping
-    public ResponseEntity<String> createPost(@RequestBody PostRequestDTO postRequestDTO) {
-        postService.save(postRequestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body("게시글이 등록되었습니다.");
+    public ResponseEntity<PostResponseDTO> getPostById(@PathVariable Long id) {
+        PostResponseDTO post = postService.findById(id);
+        return ResponseEntity.ok(post);
     }
 
     /**
@@ -95,19 +90,33 @@ public class PostController {
     }
 
     /**
-     * 게시글 이미지 업로드
+     * 게시글 업로드
      */
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("email") String email) {
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam("content") String content,
+            HttpSession session) {
+
+        String email = (String) session.getAttribute("loginEmail");
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다.");
+        }
 
         try {
-            String filePath = postService.imgupload(file, email);
-            return ResponseEntity.ok("업로드 성공: " + filePath);
-        } catch (IOException e) {
+            // 이미지 업로드 후 URL 반환
+            String fileUrl = postService.imgupload(file, email);
+
+            // 게시글 저장 (DB에는 URL 저장)
+            postService.savePost(email, content, fileUrl);
+
+            return ResponseEntity.ok("게시물 업로드 성공");
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("이미지 업로드 실패: " + e.getMessage());
+                    .body("게시물 업로드 실패: " + e.getMessage());
         }
     }
+
 }

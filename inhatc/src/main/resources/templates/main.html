@@ -5,59 +5,257 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>게시물 관리</title>
     <style>
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
+      * {
         margin: 0;
-        padding: 20px;
-        background-color: #f0f2f5; /* 배경 색상 */
-        font-family: Arial, sans-serif;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #0f1419;
+        line-height: 1.5;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
       }
 
       .wrapper {
-        width: 90%;
-        max-width: 800px;
+        max-width: 600px;
+        margin: 0 auto;
         background-color: #ffffff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        z-index: 1; /* 필요시, 배경과의 상호작용을 위해 설정 */
+        min-height: 100vh;
+        border-left: 1px solid #eff3f4;
+        border-right: 1px solid #eff3f4;
       }
 
       .container {
-        width: 95%;
-        margin: 0 auto 20px auto;
+        padding: 12px 16px;
+        border-bottom: 1px solid #eff3f4;
       }
 
-      .card {
-        background-color: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px 0;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      /* X 스타일 네비게이션 바 */
+      .navbar {
+        position: sticky;
+        top: 0;
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #eff3f4;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        min-height: 64px;
+        gap: 20px;
+      }
+
+      .navbar img {
         cursor: pointer;
-        transition: transform 0.2s;
+        padding: 10px;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        object-fit: contain;
+      }
+
+      .navbar img:hover {
+        background-color: #f7f9f9;
+      }
+
+      /* home.png: 256x256 (1:1) - 30% 증가 */
+      .navbar img[src="/images/home.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* user.png: 700x594 (약 1.18:1) - 30% 증가 */
+      .navbar img[src="/images/user.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      /* Message.png: 512x512 (1:1) - 30% 증가 */
+      .navbar img[src="/Message.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* alram.png: 700x590 (약 1.19:1) - 30% 증가 */
+      .navbar img[src="/images/alram.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      /* logout.png - 30% 증가 */
+      .navbar img[src="/images/logout.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* 게시물 작성 폼 */
+      #postForm {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 0;
+      }
+
+      #content {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        font-size: 20px;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        color: #0f1419;
+        background-color: transparent;
+        min-height: 120px;
+      }
+
+      #content::placeholder {
+        color: #536471;
+      }
+
+      #fileUpload {
+        display: none; /* 파일 입력을 숨김 */
+      }
+
+      /* 이미지 업로드 버튼 스타일 (message.html과 동일) */
+      .image-upload-button {
+        padding: 8px 12px;
+        background-color: #f7f9f9;
+        color: #0f1419;
+        border: 1px solid #eff3f4;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .image-upload-button:hover {
+        background-color: #eff3f4;
+      }
+
+      button {
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 24px;
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        align-self: flex-end;
+        margin-top: 8px;
+      }
+
+      button:hover {
+        background-color: #272c30;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* 게시물 카드 */
+      .card {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eff3f4;
+        cursor: pointer;
+        transition: background-color 0.2s;
         position: relative;
-        overflow: hidden; /* 이미지가 카드 밖으로 나가지 않도록 설정 */
+        display: flex;
+        gap: 12px;
       }
 
       .card:hover {
-        transform: scale(1.02);
+        background-color: #f7f9f9;
+      }
+
+      .profile-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+
+      .card-content {
+        flex: 1;
+        min-width: 0;
       }
 
       .card-header {
-        font-size: 20px;
-        color: #4b4b4b;
-        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .card-header a {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f1419;
+        text-decoration: none;
+      }
+
+      .card-header a:hover {
+        text-decoration: underline;
       }
 
       .card-body {
-        margin-top: 10px;
-        color: #6c757d;
+        font-size: 15px;
+        color: #0f1419;
+        margin: 8px 0;
+        word-wrap: break-word;
       }
 
+      .card-date {
+        font-size: 15px;
+        color: #536471;
+        margin-bottom: 4px;
+      }
+
+      .content-img {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px;
+        margin-top: 12px;
+        object-fit: cover;
+        max-height: 400px;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #536471;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+        font-size: 18px;
+        z-index: 10;
+      }
+
+      .close-button:hover {
+        background-color: #f4212e;
+        color: #ffffff;
+      }
+
+      /* 모달 스타일 */
       .modal {
         display: none;
         position: fixed;
@@ -67,293 +265,353 @@
         width: 100%;
         height: 100%;
         overflow: auto;
-        background-color: rgba(0, 0, 0, 0.5);
-        padding-top: 100px;
+        background-color: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
       }
 
       .modal-content {
-        background-color: #fff;
-        margin: auto;
-        padding: 20px;
-        border: 1px solid #ccc;
-        width: 50%;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-      }
-
-      .close:hover,
-      .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-      }
-
-      #postForm,
-      #commentForm {
+        background-color: #ffffff;
+        margin: 40px auto;
+        padding: 0;
+        border-radius: 16px;
         width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+
+      .modal-content .close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        margin-top: 20px;
-      }
-
-      #content,
-      #commentContent {
-        width: 100%;
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        resize: none;
-      }
-
-      button,
-      .button-link {
-        padding: 10px 15px;
-        background-color: #007bff;
-        border: none;
-        color: white;
-        border-radius: 5px;
+        justify-content: center;
+        color: #536471;
+        font-size: 24px;
+        font-weight: normal;
         cursor: pointer;
-        font-weight: bold;
-        margin-top: 10px;
+        transition: background-color 0.2s;
+        z-index: 10;
+      }
+
+      .modal-content .close:hover {
+        background-color: #f7f9f9;
+      }
+
+      #postDetail {
+        padding: 16px;
+      }
+
+      #postDetail h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+
+      #postDetail h2 a {
+        color: #0f1419;
         text-decoration: none;
-        display: inline-block;
       }
 
-      button:hover,
-      .button-link:hover {
-        background-color: #0056b3;
+      #postDetail h2 a:hover {
+        text-decoration: underline;
       }
 
-      .button-link {
-        margin: 0 5px;
-        /* Spacing between buttons */
+      #postDetail p {
+        font-size: 15px;
+        color: #0f1419;
+        margin: 8px 0;
+      }
+
+      /* 댓글 섹션 */
+      #commentSection {
+        border-top: 1px solid #eff3f4;
+        padding: 16px;
       }
 
       #comments {
-        width: 100%;
-        margin-top: 20px;
-        max-height: 400px; /* 필요한 최대 높이 설정 */
-        overflow-x: auto; /* 세로 스크롤바 추가 */
-        padding-right: 10px; /* 스크롤바와 내용 간의 간격 */
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 16px;
       }
 
-      .profile-img {
-        width: 100%; /* 프로필 이미지를 카드 너비에 맞추기 위해 100%로 설정 */
-        max-width: 160px; /* 최대 너비를 설정하여 너무 커지지 않도록 제한 */
-        height: auto; /* 비율을 유지하면서 높이를 자동으로 조정 */
-        object-fit: cover;
-        border-radius: 50%;
-        display: block;
-        margin-right: 20px; /* 이미지와 텍스트 사이에 간격 추가 */
-        float: left; /* 왼쪽 정렬 */
-      }
-
-      .close-button {
-        float: right;
-        color: #aaa;
-        font-size: 24px;
-        cursor: pointer;
-      }
-
-      .close-button:hover {
-        color: #f00;
-      }
-
-      .navbar {
-        width: 100%;
+      .comment {
+        padding: 12px 0;
+        border-bottom: 1px solid #eff3f4;
         display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #ffffff;
-        padding: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        margin-bottom: 20px;
+        gap: 12px;
       }
 
-      .navbar img {
-        width: 60px;
-        height: 60px;
-        margin: 0 20px;
+      .comment:last-child {
+        border-bottom: none;
+      }
+
+      .comment .profile-img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .comment p {
+        font-size: 15px;
+        color: #0f1419;
+        margin: 4px 0;
+      }
+
+      .comment strong {
+        color: #0f1419;
+        font-weight: 700;
+      }
+
+      #commentForm {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #commentContent {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #eff3f4;
+        border-radius: 8px;
+        font-size: 15px;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        min-height: 80px;
+      }
+
+      #commentContent:focus {
+        border-color: #1d9bf0;
+      }
+
+      /* 알림 모달 */
+      #notificationModal .modal-content {
+        max-width: 600px;
+      }
+
+      .notification-item {
+        padding: 16px;
+        border-bottom: 1px solid #eff3f4;
         cursor: pointer;
+        transition: background-color 0.2s;
       }
 
-      .navbar a {
-        color: white;
-        text-decoration: none;
-        font-size: 18px;
-        margin: 0 15px;
+      .notification-item:hover {
+        background-color: #f7f9f9;
       }
 
-      .delete-button {
-        float: right;
-        color: #aaa;
-        font-size: 24px;
-        cursor: pointer;
+      .notification-item:last-child {
+        border-bottom: none;
       }
 
-      .delete-button:hover {
-        color: #f00;
-      }
-
-      .content-img {
-        width: calc(200px - 20px);
-        height: calc(200px - 20px);
-        object-fit: cover;
-        margin-top: 10px;
-      }
-
-      /* Toggle-container fixed position at the bottom right */
-      /* Toggle-container fixed position at the bottom right */
+      /* 토글 컨테이너 */
       .toggle-container {
         position: fixed;
         bottom: 20px;
         right: 20px;
         background-color: #ffffff;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        z-index: 1000; /* Ensure it appears above other content */
+        border-radius: 24px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        z-index: 1000;
+        border: 1px solid #eff3f4;
       }
 
-      /* Common styles for content containers */
+      .toggle-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-radius: 20px;
+        background-color: transparent;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 500;
+        color: #0f1419;
+        transition: background-color 0.2s;
+        margin-bottom: 4px;
+      }
+
+      .toggle-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .toggle-item:hover {
+        background-color: #f7f9f9;
+      }
+
       .content-container {
-        display: none; /* Hide by default, will be toggled by JavaScript */
         position: absolute;
         bottom: 100%;
         right: 0;
-        width: 300px; /* Adjust width as needed */
-        max-height: 400px; /* Adjust height as needed */
+        width: 360px;
+        max-height: 500px;
         background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        margin-bottom: 8px;
+        border: 1px solid #eff3f4;
       }
 
-      /* Header styles */
       .content-container .header {
-        background-color: #007bff;
-        color: white;
-        padding: 10px;
-        font-size: 18px;
-        font-weight: bold;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
+        background-color: #ffffff;
+        color: #0f1419;
+        padding: 16px;
+        font-size: 20px;
+        font-weight: 700;
+        border-bottom: 1px solid #eff3f4;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
 
       .content-container .header .close-button {
-        font-size: 24px;
-        color: white;
+        font-size: 20px;
+        color: #536471;
         cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
       }
 
       .content-container .header .close-button:hover {
-        color: #f00;
+        background-color: #f7f9f9;
       }
 
-      /* Messages area styles */
       .content-container .messages {
         flex: 1;
-        padding: 10px;
+        padding: 16px;
         overflow-y: auto;
-        background-color: #f8f9fa;
+        background-color: #ffffff;
       }
 
-      /* Footer styles */
       .content-container .footer {
-        background-color: #e9ecef;
-        padding: 10px;
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
+        background-color: #ffffff;
+        padding: 12px 16px;
+        border-top: 1px solid #eff3f4;
         display: flex;
         align-items: center;
+        gap: 8px;
       }
 
       .content-container .footer textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #eff3f4;
+        border-radius: 24px;
         resize: none;
-        margin-right: 10px;
+        font-size: 15px;
+        outline: none;
+        font-family: inherit;
+      }
+
+      .content-container .footer textarea:focus {
+        border-color: #1d9bf0;
       }
 
       .content-container .footer button {
-        padding: 10px 15px;
-        background-color: #007bff;
+        padding: 8px 16px;
+        background-color: #1d9bf0;
         border: none;
         color: white;
-        border-radius: 5px;
+        border-radius: 24px;
         cursor: pointer;
-        font-weight: bold;
+        font-weight: 700;
+        font-size: 15px;
+        transition: background-color 0.2s;
       }
 
       .content-container .footer button:hover {
-        background-color: #0056b3;
+        background-color: #1a8cd8;
       }
 
-      /* Specific styles for chat-box and user-box */
-      #chat-box {
-        display: none; /* Hidden by default */
-      }
-
-      #user-box {
-        display: none; /* Hidden by default */
-      }
-
-      .toggle-item {
-        padding: 10px;
-        cursor: pointer;
-        border-radius: 5px;
-        background-color: #f8f9fa;
-        margin-bottom: 5px;
-        text-align: center;
-      }
-
-      .toggle-item:hover {
-        background-color: #e9ecef;
-      }
-      /* Bubble styles for chat messages */
       .bubble {
-        max-width: 75%; /* Limit the width of the bubble */
-        padding: 10px;
-        border-radius: 15px;
-        background-color: #f1f1f1;
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 20px;
+        background-color: #f7f9f9;
         display: inline-block;
-        word-wrap: break-word; /* Ensure long words break and wrap */
+        word-wrap: break-word;
+        font-size: 15px;
+        margin: 4px 0;
       }
 
-      /* Specific styles for user messages */
       .message.user .bubble {
-        background-color: #007bff; /* Blue background for user messages */
+        background-color: #1d9bf0;
         color: white;
-        align-self: flex-end; /* Align user messages to the right */
+        align-self: flex-end;
       }
 
-      /* Specific styles for bot messages */
       .message .bubble.bot {
-        background-color: #e9ecef; /* Light gray background for bot messages */
-        color: black;
-        align-self: flex-start; /* Align bot messages to the left */
+        background-color: #f7f9f9;
+        color: #0f1419;
+        align-self: flex-start;
       }
 
-      /* Ensure the chat messages container uses flexbox to align messages */
       #chat-messages {
         display: flex;
         flex-direction: column;
-        gap: 10px; /* Space between messages */
+        gap: 8px;
+      }
+
+      /* 좋아요 버튼 스타일 */
+      #postDetail button {
+        background-color: transparent;
+        color: #536471;
+        border: 1px solid #eff3f4;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 15px;
+        font-weight: 500;
+        margin-right: 8px;
+        transition: all 0.2s;
+      }
+
+      #postDetail button:hover {
+        background-color: #f7f9f9;
+        color: #f4212e;
+        border-color: #f4212e;
+      }
+
+      #postDetail button[style*="background-color: #dc3545"] {
+        background-color: #f4212e;
+        color: #ffffff;
+        border-color: #f4212e;
+      }
+
+      #postDetail button[style*="background-color: #dc3545"]:hover {
+        background-color: #d91e2e;
+      }
+
+      /* 반응형 디자인 */
+      @media (max-width: 768px) {
+        .wrapper {
+          max-width: 100%;
+          border-left: none;
+          border-right: none;
+        }
+
+        .modal-content {
+          width: 100%;
+          margin: 0;
+          border-radius: 0;
+          max-height: 100vh;
+        }
+
+        .content-container {
+          width: calc(100vw - 40px);
+          max-width: 360px;
+        }
       }
     </style>
   </head>
@@ -364,34 +622,39 @@
         <!-- 홈: 이제 /member/view 대신 /api/posts 로 이동 -->
         <img
           src="/images/home.png"
-          style="height: 55px; width: 55px"
           alt="home"
-          onclick="location.href='/';"
+          onclick="location.href='/main';"
         />
 
         <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
         <img
           src="/images/user.png"
-          style="width: 50px; height: 50px"
-          alt="Logout"
-          onclick="location.href='/api/members/myapge'";
+          alt="User"
+          onclick="location.href='/member/mypage';"
+        />
+
+        <!-- 메시지: Message.png -->
+        <img
+          src="/Message.png"
+          alt="Message"
+          onclick="location.href='/chat/message';"
+        />
+
+        <!-- 알람 / 게시물 확인: /posts/check -->
+        <img
+          src="/images/alram.png"
+          alt="Alarm"
+          onclick="showNotificationModal()"
+          id="notificationIcon"
         />
 
         <!-- 로그아웃: /member/logout 대신 /api/logout -->
         <img
           src="/images/logout.png"
-          style="width: 50px; height: 50px"
           alt="Logout"
           onclick="document.getElementById('logout').submit();"
         />
-        <form id="logout" action="/api/logout" method="post"></form>
-
-        <!-- 알람 / 게시물 확인: /member/PostCheck 대신 /posts/check -->
-        <img
-          src="/images/alram.png"
-          alt="Alarm"
-          onclick="location.href='/posts/check';"
-        />
+        <form id="logout" action="/api/members/logout" method="post"></form>
       </div>
 
       <div class="container">
@@ -405,9 +668,12 @@
             ></textarea>
           </div>
           <div>
-            <input type="file" id="fileUpload" name="file" />
+            <input type="file" id="fileUpload" name="file" accept="image/*" />
+            <button type="button" class="image-upload-button" onclick="document.getElementById('fileUpload').click()">
+              파일업로드
+            </button>
           </div>
-          <button type="button" onclick="savePost()">저장</button>
+          <button onclick="savePost(event)">게시하기</button>
         </form>
       </div>
 
@@ -432,14 +698,27 @@
                 id="commentContent"
                 placeholder="댓글을 입력하세요"
               ></textarea>
-              <button onclick="submitComment()">댓글 작성</button>
+              <button onclick="submitComment(currentPostId)">댓글 등록</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 알림 모달 -->
+      <div id="notificationModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; padding: 0;">
+          <div style="position: sticky; top: 0; background: white; padding: 16px; border-bottom: 1px solid #eff3f4; z-index: 10;">
+            <span class="close" onclick="closeNotificationModal()">&times;</span>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f1419;">알림</h2>
+          </div>
+          <div id="notificationList" style="padding: 0;">
+            <!-- 알림 목록이 여기에 동적으로 추가됩니다 -->
           </div>
         </div>
       </div>
     </div>
     <!-- Toggle Container -->
-    <div class="toggle-container">
+    <!-- <div class="toggle-container">
       <div class="toggle-list">
         <div id="toggle-chat" class="toggle-item">Chat with GPT</div>
         <div id="toggle-user" class="toggle-item">User</div>
@@ -458,91 +737,145 @@
       <div id="user-box" class="content-container user-box">
         <div class="header">User</div>
         <ul id="user-messages">
-          <!-- User messages will be displayed here -->
-        </ul>
+           User messages will be displayed here -->
+        <!-- </ul>
       </div>
-    </div>
+    </div> --> 
     <script type="text/javascript">
+      // =====================================================
       // ✅ 초기 실행
+      // =====================================================
       window.onload = async function () {
+        console.log("🚀 [window.onload] 페이지 로드 시작");
+
         try {
+          console.log("🔄 세션 이메일 정보 요청 중...");
           await fetchMemberEmail(); // 세션 정보 가져오기
-          setMemberPageLink(); // 사용자 페이지 링크 설정
-          fetchPosts(); // 게시물 로드
-          loadReceivedMessages(); // 메시지 로드
+
+          console.log("🧾 게시물 목록 불러오기 시작...");
+          await fetchPosts(); // 게시물 로드
+
+          // console.log("💬 메시지 로드 시작...");
+          // loadReceivedMessages(); // 메시지 로드
 
           // 초기 상태 설정
           document.getElementById("chat-box").style.display = "none";
           document.getElementById("user-box").style.display = "none";
+          console.log("📦 chat-box, user-box 초기 숨김 완료");
+          
+          // URL 파라미터에서 postId 확인 (알림에서 클릭한 경우)
+          const urlParams = new URLSearchParams(window.location.search);
+          const postId = urlParams.get('postId');
+          if (postId) {
+            console.log("🔔 알림에서 게시물 클릭됨, postId:", postId);
+            // 게시물 로드 후 모달 열기
+            setTimeout(() => {
+              viewPost(parseInt(postId));
+            }, 500); // 게시물 로드 대기
+          }
         } catch (error) {
-          console.error("window onload 중 에러:", error);
+          console.error("💥 window.onload 중 에러 발생:", error);
         }
+
+        console.log("✅ [window.onload] 초기화 완료");
       };
 
+      // =====================================================
       // ✅ UI 토글 이벤트
+      // =====================================================
       document
         .getElementById("toggle-chat")
         .addEventListener("click", function () {
+          console.log("💬 [UI] 채팅창 토글 클릭됨");
           toggleVisibility("chat-box");
         });
 
       document
         .getElementById("toggle-user")
         .addEventListener("click", function () {
+          console.log("👥 [UI] 사용자 목록 토글 클릭됨");
           toggleVisibility("user-box");
         });
 
       function toggleVisibility(id) {
         const element = document.getElementById(id);
-        if (element.style.display === "none" || element.style.display === "") {
-          element.style.display = "flex";
-        } else {
-          element.style.display = "none";
+        if (!element) {
+          console.error(`❌ [toggleVisibility] 요소를 찾을 수 없습니다: ${id}`);
+          return;
         }
+
+        const prevDisplay = element.style.display;
+        element.style.display =
+          prevDisplay === "none" || prevDisplay === "" ? "flex" : "none";
+
+        console.log(
+          `🟢 [toggleVisibility] ${id}: ${prevDisplay} → ${element.style.display}`
+        );
       }
 
       // =====================================================
       // 🔹 세션 / 사용자 관련
       // =====================================================
       async function fetchMemberEmail() {
+        console.log("📡 [fetchMemberEmail] 호출됨");
+
         try {
-          const response = await fetch("/api/session");
+          const response = await fetch("/api/members/session");
+          console.log("✅ [fetchMemberEmail] 응답 상태 코드:", response.status);
+
+          if (response.status === 401) {
+            // 세션 만료 혹은 로그인 필요
+            alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
+            window.location.href = "/";
+            return;
+          }
+
           const data = await response.json();
+          console.log("📦 [fetchMemberEmail] 응답 데이터:", data);
 
           if (data.loginEmail) {
+            console.log("👤 로그인 이메일 확인됨:", data.loginEmail);
             saveMemberEmail(data.loginEmail);
           } else {
-            console.error("사용자 이메일을 찾을 수 없습니다.");
+            console.warn(
+              "⚠️ [fetchMemberEmail] 사용자 이메일을 찾을 수 없습니다. 로그인 페이지로 이동합니다."
+            );
+            window.location.href = "/";
           }
         } catch (error) {
-          console.error("memberEmail을 가져오는 중 에러:", error);
+          console.error("💥 [fetchMemberEmail] 에러 발생:", error);
+          window.location.href = "/"; // 네트워크 오류 시에도 로그인 페이지로 이동
         }
       }
 
       function saveMemberEmail(memberEmail) {
-        sessionStorage.setItem("loggedInMember", memberEmail);
-        console.log("memberEmail 저장됨:", memberEmail);
+        console.log(
+          "💾 [saveMemberEmail] sessionStorage에 저장 시도:",
+          memberEmail
+        );
+        sessionStorage.setItem("loginEmail", memberEmail);
+        console.log("✅ [saveMemberEmail] 저장 완료");
       }
+      /***
+       * 로그인된 사용자 이메일 가져오기 함수
+       * /
+       * */
+      async function getMemberEmail() {
+        try {
+          // ✅ 올바른 URL (members)
+          const response = await fetch("/api/members/session", {
+            credentials: "include", // 세션 쿠키 포함
+          });
 
-      function getMemberEmail() {
-        const memberEmail = sessionStorage.getItem("loggedInMember");
-        if (memberEmail) {
-          return memberEmail;
-        } else {
-          console.error("sessionStorage에서 memberEmail을 찾을 수 없습니다.");
+          if (!response.ok) {
+            throw new Error("세션 정보를 가져오는데 실패했습니다.");
+          }
+
+          const data = await response.json();
+          return data.loginEmail || null;
+        } catch (error) {
+          console.error("Error fetching session info:", error);
           return null;
-        }
-      }
-
-      function setMemberPageLink() {
-        const memberEmail = getMemberEmail();
-        if (memberEmail) {
-          const userImage = document.getElementById("userImage");
-          userImage.onclick = () => {
-            location.href = `/members/mypage?email=${encodeURIComponent(
-              memberEmail
-            )}`;
-          };
         }
       }
 
@@ -550,138 +883,326 @@
       // 🔹 게시물 관련
       // =====================================================
       async function fetchPosts() {
+        console.log("📡 [fetchPosts] 함수 실행됨");
+
         try {
+          console.log("➡️ /api/posts 로 요청 시작");
           const response = await fetch("/api/posts");
+
+          console.log("✅ 응답 상태 코드:", response.status);
+
+          if (!response.ok) {
+            console.error("❌ 응답 실패:", response.statusText);
+            return;
+          }
+
           const posts = await response.json();
+          console.log("📦 전체 posts 데이터:", posts);
 
-          const memberEmail = getMemberEmail();
+          const memberEmail = await getMemberEmail();
+          console.log("👤 현재 로그인 사용자 이메일:", memberEmail);
+
           const postContainer = document.getElementById("postContainer");
-          postContainer.innerHTML = "";
+          if (!postContainer) {
+            console.error("❌ postContainer 요소를 찾을 수 없습니다!");
+            return;
+          }
 
-          posts.forEach((post) => {
+          postContainer.innerHTML = "";
+          console.log("🧹 postContainer 초기화 완료");
+
+          if (!Array.isArray(posts)) {
+            console.error("⚠️ posts 데이터가 배열이 아닙니다:", posts);
+            return;
+          }
+
+          posts.forEach((post, index) => {
+            console.group(`📝 게시물 [${index}]`);
+            console.log("post 데이터:", post);
+
             const card = document.createElement("div");
             card.className = "card";
             card.setAttribute("data-id", post.id);
             card.onclick = function () {
+              console.log(`🔍 게시물 클릭됨 → id: ${post.id}`);
               viewPost(post.id);
             };
 
-            if (memberEmail === post.writer) {
+            // 본인 글일 때 삭제 버튼 (이메일로 비교)
+            if (memberEmail && post.writerEmail === memberEmail) {
+              console.log("🗑️ 본인 게시글 → 삭제 버튼 추가");
               const closeButton = document.createElement("span");
               closeButton.className = "close-button";
               closeButton.innerHTML = "&times;";
               closeButton.onclick = function (event) {
+                console.log(`❌ 게시물 삭제 클릭 → id: ${post.id}`);
+                event.stopPropagation();
                 deletePost(event, this.parentNode.getAttribute("data-id"));
               };
               card.appendChild(closeButton);
+            } else {
+              console.log("🙅‍♂️ 다른 사용자의 게시글 → 삭제 버튼 없음");
             }
 
+            // 프로필 이미지
             const img = document.createElement("img");
             img.className = "profile-img";
-            img.src = `/api/posts/${post.id}/writer/image`;
+            img.src = post.profilePicturePath;
             img.onerror = function () {
-              this.style.display = "none";
+              console.warn(
+                `⚠️ 프로필 이미지 로드 실패 (${post.profilePicturePath}), 기본 이미지로 대체`
+              );
+              this.src = "/images/default-profile.png";
             };
+            console.log("🖼️ 프로필 이미지 경로:", img.src);
 
+            // 카드 콘텐츠 컨테이너
+            const cardContent = document.createElement("div");
+            cardContent.className = "card-content";
+
+            // 작성자 헤더
             const header = document.createElement("div");
             header.className = "card-header";
-            header.textContent = post.writer;
+            const authorLink = document.createElement("a");
+            authorLink.href = `/member/profile/${encodeURIComponent(post.writerEmail)}`;
+            authorLink.onclick = function(e) {
+              e.stopPropagation();
+            };
+            authorLink.textContent = post.writerName || "(이름 없음)";
+            header.appendChild(authorLink);
+            console.log("👤 작성자:", authorLink.textContent);
 
+            // 날짜
+            const dateDiv = document.createElement("div");
+            dateDiv.className = "card-date";
+            const formattedDate = new Date(post.createdDate).toLocaleString("ko-KR", {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            dateDiv.textContent = formattedDate;
+            console.log("🕒 작성일:", formattedDate);
+
+            // 본문
             const body = document.createElement("div");
             body.className = "card-body";
-            body.textContent = `${new Date(
-              post.createdDate
-            ).toLocaleString()} - ${post.content}`;
+            body.textContent = post.content || "(내용 없음)";
+            console.log("💬 내용:", post.content);
 
-            const contentImg = document.createElement("img");
-            contentImg.className = "content-img";
-            contentImg.src = `/api/posts/${post.id}/image`;
-            contentImg.style.width = "200px";
-            contentImg.style.height = "200px";
-            contentImg.onerror = function () {
-              this.style.display = "none";
-            };
+            // 게시글 이미지
+            if (post.imgsource) {
+              console.log("🖼️ 게시글 이미지 추가:", post.imgsource);
+              const contentImg = document.createElement("img");
+              contentImg.className = "content-img";
+              contentImg.src = post.imgsource;
+              contentImg.onerror = function () {
+                console.warn(`⚠️ 게시글 이미지 로드 실패 (${post.imgsource})`);
+                this.style.display = "none";
+              };
+              cardContent.appendChild(contentImg);
+            } else {
+              console.log("🚫 게시글 이미지 없음");
+            }
 
+            cardContent.appendChild(header);
+            cardContent.appendChild(dateDiv);
+            cardContent.appendChild(body);
             card.appendChild(img);
-            card.appendChild(header);
-            card.appendChild(contentImg);
-            card.appendChild(body);
+            card.appendChild(cardContent);
             postContainer.appendChild(card);
+
+            console.groupEnd();
           });
+
+          console.log("✅ 모든 게시물 렌더링 완료");
         } catch (error) {
-          console.error("게시물 가져오기 중 에러:", error);
+          console.error("💥 게시물 가져오기 중 에러 발생:", error);
         }
       }
 
+      // =====================================================
+      // 🔹 게시물 상세 보기 (모달)
+      // =====================================================
       function viewPost(postId) {
+        window.currentPostId = postId; // ✅ 전역에 저장
+        console.log("🧩 currentPostId 저장됨:", currentPostId);
+
         const modal = document.getElementById("postModal");
+        if (!modal) {
+          console.error("❌ [viewPost] postModal 요소를 찾을 수 없습니다!");
+          return;
+        }
+
         modal.style.display = "block";
+        console.log("🪟 모달 표시됨");
+
+        // 모달 콘텐츠 클릭 시 이벤트 전파 방지 (모달 외부 클릭 시에만 닫히도록)
+        const modalContent = modal.querySelector(".modal-content");
+        if (modalContent) {
+          modalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+        }
 
         fetch(`/api/posts/${postId}`)
-          .then((response) => response.json())
+          .then((response) => {
+            console.log(
+              "📡 [viewPost] 상세 게시물 요청:",
+              `/api/posts/${postId}`
+            );
+            console.log("📥 응답 상태 코드:", response.status);
+            return response.json();
+          })
           .then((post) => {
+            console.log("📦 [viewPost] 게시물 상세 데이터:", post);
+
             const postDetailContainer = document.getElementById("postDetail");
+            if (!postDetailContainer) {
+              console.error(
+                "❌ [viewPost] postDetail 요소를 찾을 수 없습니다!"
+              );
+              return;
+            }
+
             postDetailContainer.innerHTML = "";
 
+            // ✅ 프로필 이미지
             const img = document.createElement("img");
             img.className = "profile-img";
-            img.src = `/api/posts/${encodeURIComponent(post.id)}/writer/image`;
+            img.src = post.profilePicturePath;
             img.style.width = "100px";
             img.style.height = "100px";
             img.style.borderRadius = "50%";
             img.onerror = function () {
+              console.warn("⚠️ 상세보기 프로필 이미지 로드 실패");
               this.style.display = "none";
             };
 
-            const contentImg = document.createElement("img");
-            contentImg.className = "content-img";
-            contentImg.src = `/api/posts/${postId}/image`;
-            contentImg.style.width = "200px";
-            contentImg.style.height = "200px";
-            contentImg.onerror = function () {
-              this.style.display = "none";
-            };
+            // ✅ 게시글 이미지
+            if (post.imgsource) {
+              console.log("🖼️ 상세 게시글 이미지 추가:", post.imgsource);
+              const contentImg = document.createElement("img");
+              contentImg.className = "content-img";
+              contentImg.src = post.imgsource;
+              contentImg.style.width = "200px";
+              contentImg.style.height = "200px";
+              contentImg.onerror = function () {
+                console.warn("⚠️ 상세 게시글 이미지 로드 실패");
+                this.style.display = "none";
+              };
+              postDetailContainer.appendChild(contentImg);
+            } else {
+              console.log("🚫 상세 게시글 이미지 없음");
+            }
 
             const likeButton = document.createElement("button");
-            likeButton.textContent = `Like (${post.love})`;
+            likeButton.textContent = `❤️ ${post.love || 0}`;
             likeButton.onclick = function () {
+              console.log("❤️ 좋아요 버튼 클릭됨");
               toggleLove(postId, likeButton);
             };
 
+            // 본인 게시글일 때만 삭제 버튼 추가
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "삭제";
+            deleteButton.style.backgroundColor = "#f4212e";
+            deleteButton.style.color = "#ffffff";
+            deleteButton.onclick = async function (event) {
+              event.stopPropagation();
+              if (confirm("게시물을 삭제하시겠습니까?")) {
+                try {
+                  const memberEmail = await getMemberEmail();
+                  if (memberEmail && post.writerEmail === memberEmail) {
+                    const response = await fetch(`/api/posts/${postId}`, {
+                      method: "DELETE",
+                    });
+                    if (!response.ok) {
+                      throw new Error("게시물 삭제 실패");
+                    }
+                    alert("게시물이 삭제되었습니다.");
+                    closeModal();
+                    fetchPosts();
+                  } else {
+                    alert("본인의 게시물만 삭제할 수 있습니다.");
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  alert("게시물 삭제 중 오류가 발생했습니다.");
+                }
+              }
+            };
+
             const contentHtml = `
-          <h2><a href="/members/mypage?email=${post.writer}">${
-              post.writer
-            }</a></h2>
-          <p>${post.content}</p>
-          <p><strong>조회수:</strong> ${post.hits}</p>
-          <p>${new Date(post.createdDate).toLocaleString()}</p>
-        `;
+              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <img src="${post.profilePicturePath}" 
+                     onerror="this.src='/images/default-profile.png'; this.style.display='none';"
+                     style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                <div style="flex: 1;">
+                  <h2 style="margin: 0 0 4px 0; font-size: 20px;">
+                    <a href="/member/profile/${encodeURIComponent(post.writerEmail)}" 
+                       style="color: #0f1419; text-decoration: none; font-weight: 700;">${post.writerName}</a>
+                  </h2>
+                  <p style="margin: 0; color: #536471; font-size: 15px;">${new Date(post.createdDate).toLocaleString("ko-KR")}</p>
+                </div>
+              </div>
+              <p style="font-size: 15px; color: #0f1419; margin: 12px 0; line-height: 1.5;">${post.content || ""}</p>
+              ${post.imgsource ? `<img src="${post.imgsource}" style="width: 100%; border-radius: 16px; margin: 12px 0; max-height: 400px; object-fit: cover;" onerror="this.style.display='none';">` : ""}
+              <p style="color: #536471; font-size: 15px; margin-top: 12px;">조회수: ${post.hits || 0}</p>
+            `;
 
-            postDetailContainer.appendChild(img);
-            postDetailContainer.innerHTML += contentHtml;
-            postDetailContainer.appendChild(contentImg);
-            postDetailContainer.appendChild(likeButton);
+            postDetailContainer.innerHTML = contentHtml;
+            
+            const buttonContainer = document.createElement("div");
+            buttonContainer.style.display = "flex";
+            buttonContainer.style.gap = "8px";
+            buttonContainer.style.marginTop = "16px";
+            buttonContainer.appendChild(likeButton);
+            
+            // 본인 게시글일 때만 삭제 버튼 표시
+            getMemberEmail().then((memberEmail) => {
+              if (memberEmail && post.writerEmail === memberEmail) {
+                buttonContainer.appendChild(deleteButton);
+              }
+              postDetailContainer.appendChild(buttonContainer);
+            });
 
+            console.log("💬 댓글 로드 시작...");
             fetchComments(postId);
           })
-          .catch((error) =>
-            console.error("Error fetching post details:", error)
-          );
+          .catch((error) => {
+            console.error("💥 [viewPost] 게시물 상세 불러오기 에러:", error);
+          });
       }
+      // =====================================================
+      // 🔹 게시물 저장
+      // =====================================================
 
-      async function savePost() {
+      async function savePost(event) {
+        event.preventDefault(); // 기본 form 제출 막기
+
         const content = document.getElementById("content").value;
         const fileInput = document.getElementById("fileUpload");
         const file = fileInput.files[0];
 
+        // 세션에서 로그인 이메일 가져오기
+        const userEmail = sessionStorage.getItem("loginEmail");
+
+        if (!userEmail) {
+          alert("⚠️ 로그인 정보가 없습니다. 다시 로그인해주세요.");
+          return;
+        }
+
         const formData = new FormData();
         formData.append("content", content);
+        formData.append("email", userEmail); // 반드시 userEmail 사용
         if (file) {
           formData.append("file", file);
         }
 
         try {
-          const response = await fetch("/api/posts", {
+          const response = await fetch("/api/posts/upload", {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -690,12 +1211,18 @@
           if (!response.ok) {
             throw new Error("게시물을 저장하는데 실패했습니다.");
           }
-          alert(await response.text());
+
+          const message = await response.text();
+          alert(message);
           fetchPosts();
         } catch (error) {
           console.error("Error:", error);
         }
       }
+
+      // =====================================================
+      // 🔹 게시물 삭제
+      // =====================================================
 
       async function deletePost(event, postId) {
         event.stopPropagation();
@@ -717,7 +1244,7 @@
       }
 
       // =====================================================
-      // 🔹 댓글 관련
+      // 🔹 댓글 FETCH
       // =====================================================
       async function fetchComments(postId) {
         try {
@@ -731,38 +1258,55 @@
             const commentDiv = document.createElement("div");
             commentDiv.className = "comment";
 
+            // 작성자 프로필 이미지 사용
             const img = document.createElement("img");
             img.className = "profile-img";
-            img.src = `/api/members/${encodeURIComponent(
-              comment.writer
-            )}/image`;
-            img.style.width = "50px";
-            img.style.height = "50px";
-            img.style.borderRadius = "50%";
+            img.src = comment.writerProfile; // DTO에서 가져온 프로필 경로
+            img.onerror = function() {
+              this.src = "/images/default-profile.png";
+            };
+
+            const commentContent = document.createElement("div");
+            commentContent.style.flex = "1";
+            commentContent.innerHTML = `
+                <p style="margin: 0 0 4px 0;"><strong>${comment.writerName}</strong></p>
+                <p style="margin: 0; color: #0f1419;">${comment.comment}</p>
+            `;
 
             commentDiv.appendChild(img);
-            commentDiv.innerHTML += `
-          <p><strong>작성자:</strong> ${comment.writer}</p>
-          <p>${comment.comment}</p>
-          <hr>
-        `;
+            commentDiv.appendChild(commentContent);
             commentsContainer.appendChild(commentDiv);
           });
         } catch (error) {
           console.error("Error fetching comments:", error);
         }
       }
-
-      async function submitComment() {
+      // =====================================================
+      // 🔹 댓글 작성
+      // =====================================================
+      // ✅ 댓글 작성 함수 (postId 인자로 받기)
+      async function submitComment(postId) {
         const commentContent = document.getElementById("commentContent").value;
-        const postId = getPostIdFromUrl();
+        
+        if (!commentContent || commentContent.trim() === "") {
+          alert("댓글 내용을 입력해주세요.");
+          return;
+        }
+
+        const userEmail = await getMemberEmail();
+        if (!userEmail) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
 
         const data = {
           comment: commentContent,
-          user: getMemberEmail(),
+          user: userEmail,
         };
 
         try {
+          console.log("📤 댓글 작성 요청 postId:", postId, "user:", userEmail);
+
           const response = await fetch(`/api/posts/${postId}/comments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -770,92 +1314,68 @@
           });
 
           if (!response.ok) {
-            throw new Error("댓글을 저장하는데 실패했습니다.");
+            const errorText = await response.text();
+            console.error("댓글 저장 실패:", errorText);
+            throw new Error("댓글 저장 실패: " + errorText);
           }
-          alert("댓글이 성공적으로 저장되었습니다.");
+
+          alert("댓글이 성공적으로 저장되었습니다!");
+          document.getElementById("commentContent").value = ""; // 입력 필드 초기화
           fetchComments(postId);
         } catch (error) {
-          console.error("Error submitting comment:", error);
+          console.error("💥 Error submitting comment:", error);
+          alert("댓글 저장 중 오류가 발생했습니다: " + error.message);
         }
       }
 
       function getPostIdFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get("id");
-      }
-
-      // =====================================================
-      // 🔹 채팅 / 메시지 관련
-      // =====================================================
-      async function loadReceivedMessages() {
-        const receiver = getMemberEmail();
-        if (!receiver) return;
-
-        const encodedReceiver = encodeURIComponent(receiver);
-
-        try {
-          const response = await fetch(
-            `/api/chats/senders?receiver=${encodedReceiver}`
-          );
-          if (!response.ok) throw new Error("발신자 가져오기 실패.");
-
-          const data = await response.json();
-          const messagesList = document.getElementById("user-messages");
-          if (!messagesList) return;
-
-          messagesList.innerHTML = "";
-          const uniqueSenders = new Set();
-
-          data.forEach((message) => {
-            if (message.sender === receiver) return;
-
-            if (!uniqueSenders.has(message.sender)) {
-              uniqueSenders.add(message.sender);
-
-              const listItem = document.createElement("li");
-              listItem.textContent = `${message.sender} `;
-              listItem.addEventListener("click", function () {
-                const encodedSender = encodeURIComponent(message.sender);
-                window.location.href = `/chat?senderId=${encodedReceiver}&receiverId=${encodedSender}`;
-              });
-
-              messagesList.appendChild(listItem);
-            }
-          });
-        } catch (error) {
-          console.error("발신자 가져오기 중 에러:", error);
-        }
+        const pathParts = window.location.pathname.split("/");
+        return pathParts[pathParts.length - 1];
       }
 
       // =====================================================
       // 🔹 좋아요 / 모달 관련
       // =====================================================
       async function toggleLove(postId, button) {
-        const user = getMemberEmail();
+        const user = await getMemberEmail();
         if (!user || user === "defaultEmail") {
           alert("로그인이 필요합니다.");
           return;
         }
 
+        console.log(`👍 [toggleLove] 호출됨 → postId=${postId}, user=${user}`);
+
         try {
           const response = await fetch(
-            `/api/posts/${postId}/love?email=${encodeURIComponent(user)}`,
+            `/api/posts/${postId}/likes?email=${encodeURIComponent(user)}`,
             { method: "POST" }
           );
 
-          if (!response.ok) throw new Error(await response.text());
+          console.log("📡 [toggleLove] 응답 상태:", response.status);
 
-          const data = await response.text();
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("좋아요 실패:", errorText);
+            throw new Error(`서버 오류: ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log("📦 [toggleLove] 서버 응답:", data);
+
           let currentCount = parseInt(
             button.textContent.match(/\d+/)?.[0] || "0"
           );
-          if (data === "liked") {
-            button.textContent = `Like (${currentCount + 1})`;
-          } else if (data === "unliked") {
-            button.textContent = `Like (${currentCount - 1})`;
+
+          if (data.liked) {
+            button.textContent = `❤️ ${currentCount + 1}`;
+            button.style.color = "#f4212e";
+          } else {
+            button.textContent = `❤️ ${currentCount - 1}`;
+            button.style.color = "#536471";
           }
         } catch (error) {
-          console.error("Error toggling like:", error);
+          console.error("💥 [toggleLove] 에러:", error);
+          alert("좋아요 처리 중 오류가 발생했습니다: " + error.message);
         }
       }
 
@@ -863,6 +1383,120 @@
         const modal = document.getElementById("postModal");
         modal.style.display = "none";
       }
+
+      // =====================================================
+      // 🔹 알림 관련
+      // =====================================================
+      async function showNotificationModal() {
+        const modal = document.getElementById("notificationModal");
+        const notificationList = document.getElementById("notificationList");
+        
+        modal.style.display = "block";
+        notificationList.innerHTML = "<div style='text-align: center; padding: 60px 20px; color: #536471; font-size: 15px;'>알림을 불러오는 중...</div>";
+        
+        try {
+          const response = await fetch("/posts/notifications", {
+            credentials: "include"
+          });
+          
+          if (!response.ok) {
+            if (response.status === 401) {
+              alert("로그인이 필요합니다.");
+              window.location.href = "/";
+              return;
+            }
+            const errorText = await response.text();
+            console.error("알림 API 오류:", response.status, errorText);
+            throw new Error("알림을 불러올 수 없습니다. (상태 코드: " + response.status + ")");
+          }
+          
+          const notifications = await response.json();
+          
+          if (!notifications || notifications.length === 0) {
+            notificationList.innerHTML = "<div style='text-align: center; padding: 60px 20px; color: #536471; font-size: 15px;'>새로운 알림이 없습니다.</div>";
+            return;
+          }
+          
+          notificationList.innerHTML = "";
+          notifications.forEach(notification => {
+            const item = document.createElement("div");
+            item.className = "notification-item";
+            item.style.backgroundColor = notification.isRead ? "#ffffff" : "#f7f9f9";
+            
+            const typeText = notification.notificationType === "LIKE" ? "❤️ 좋아요" : "💬 댓글";
+            const actionText = notification.notificationType === "LIKE" ? "좋아요를 눌렀습니다" : "댓글을 남겼습니다";
+            const actorName = notification.actorName || notification.actorEmail;
+            const date = new Date(notification.createdAt).toLocaleString("ko-KR", {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            
+            item.innerHTML = `
+              <div style="font-weight: 700; color: #0f1419; margin-bottom: 4px; font-size: 15px;">${typeText}</div>
+              <div style="margin: 4px 0; color: #0f1419; font-size: 15px;">${actorName}님이 ${actionText}</div>
+              ${notification.postContent ? `<div style="font-size: 15px; color: #536471; margin-top: 8px; padding: 8px; background-color: #f7f9f9; border-radius: 8px;">${notification.postContent.substring(0, 100)}${notification.postContent.length > 100 ? '...' : ''}</div>` : ""}
+              <div style="font-size: 13px; color: #536471; margin-top: 8px;">${date}</div>
+            `;
+            
+            item.onclick = function() {
+              closeNotificationModal();
+              // 알림 읽음 처리
+              fetch(`/posts/notifications/read?notificationId=${notification.id}`, {
+                method: 'POST'
+              });
+              // 게시물 모달 열기
+              viewPost(notification.postId);
+            };
+            
+            notificationList.appendChild(item);
+          });
+        } catch (error) {
+          console.error("알림 로드 실패:", error);
+          notificationList.innerHTML = "<div style='text-align: center; padding: 60px 20px; color: #536471; font-size: 15px;'>알림을 불러올 수 없습니다.</div>";
+        }
+      }
+      
+      function closeNotificationModal() {
+        const modal = document.getElementById("notificationModal");
+        modal.style.display = "none";
+      }
+      
+      // 모달 외부 클릭 시 닫기
+      window.addEventListener('click', function(event) {
+        const postModal = document.getElementById("postModal");
+        const notificationModal = document.getElementById("notificationModal");
+        
+        // postModal 외부 클릭 시 닫기 (모달 배경 클릭 시)
+        if (postModal && event.target === postModal) {
+          closeModal();
+        }
+        
+        // notificationModal 외부 클릭 시 닫기 (모달 배경 클릭 시)
+        if (notificationModal && event.target === notificationModal) {
+          closeNotificationModal();
+        }
+      });
+      
+      // 모달 콘텐츠 클릭 시 이벤트 전파 방지 (초기 로드 시)
+      document.addEventListener('DOMContentLoaded', function() {
+        const postModalContent = document.querySelector("#postModal .modal-content");
+        const notificationModalContent = document.querySelector("#notificationModal .modal-content");
+        
+        if (postModalContent) {
+          postModalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+        }
+        
+        if (notificationModalContent) {
+          notificationModalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+        }
+      });
 
       // =====================================================
       // 🔹 채팅 입력 이벤트 (마지막에 배치)

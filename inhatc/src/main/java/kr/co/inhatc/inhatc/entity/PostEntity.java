@@ -1,11 +1,13 @@
 package kr.co.inhatc.inhatc.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -16,99 +18,66 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
-import lombok.AccessLevel;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Entity
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name = "post_entity")
 public class PostEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // PK
+    private Long id;
 
-    private String content; // 내용
-
-    private String writer; // 작성자
-
-    private int hits; // 조회 수
-
-    private char deleteYn; // 삭제 여부
-
+    private String content;
+    private int hits;
+    private char deleteYn = 'N';
     private String imgsource;
+    private int love;
 
-    private LocalDateTime createdDate = LocalDateTime.now(); // 생성일
+    @Column(name = "created_date")
+    private LocalDateTime createdDate = LocalDateTime.now();
 
-    private LocalDateTime modifiedDate; // 수정일
+    @Column(name = "modified_date")
+    private LocalDateTime modifiedDate;
 
-    private int love; // 좋아요
-    
-    @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-    @OrderBy("id asc")
-    private List<CommentEntity> comments;
+    /** 회원 이메일 직접 저장 */
+    @Column(name = "member_email", nullable = false)
+    private String memberEmail;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    private List<CommentEntity> comments = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
-        name = "post_likes",
-        joinColumns = @JoinColumn(name = "post_id"),
-        inverseJoinColumns = @JoinColumn(name = "member_id")
+            name = "post_likes",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_email", referencedColumnName = "member_email")
     )
-    
-    private Set<MemberEntity> lovedBy = new HashSet<>(); // 좋아요 누른 사용자 목록
+    private Set<MemberEntity> lovedBy = new HashSet<>();
 
-    @Builder
-    public PostEntity(Long id, String content, String writer, int hits, char deleteYn, String imgsource, int love) {
-        this.id = id;
-        this.content = content;
-        this.writer = writer;
-        this.hits = hits;
-        this.deleteYn = deleteYn;
-        this.imgsource = imgsource;
-        this.love = love;
-        this.lovedBy = new HashSet<>();
-    }
-
-    /**
-     * 게시글 수정
-     */
-    public void update(String content) {
+    /** 비즈니스 로직 */
+    public void updateContent(String content) {
         this.content = content;
         this.modifiedDate = LocalDateTime.now();
     }
 
-    public void increaseLoveCount() {
-        this.love++;
-    }
+    public void increaseHits() { this.hits++; }
 
-    public void decreaseLoveCount() {
-        if (this.love > 0) {
-            this.love--;
-        }
-    }
+    public void increaseLove() { this.love++; }
 
-    /**
-     * 조회 수 증가
-     */
-    public void increaseHits() {
-        this.hits++;
-    }
+    public void decreaseLove() { if (this.love > 0) this.love--; }
 
-    /**
-     * 게시글 삭제
-     */
-    public void delete() {
-        this.deleteYn = 'Y';
-    }
-
-    /**
-     * 특정 사용자가 좋아요를 눌렀는지 확인
-     */
-    public boolean isLovedBy(MemberEntity member) {
-        return this.lovedBy.contains(member);
-    }
+    public void delete() { this.deleteYn = 'Y'; }
 }
+

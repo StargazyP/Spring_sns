@@ -5,6 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import kr.co.inhatc.inhatc.entity.CommentEntity;
 public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
-    List<CommentEntity> findByPostId(Long postId); // 게시글 ID로 댓글 조회
-    List<CommentEntity> findByWriterMemberEmail(String memberEmail); // 작성자 이메일로 댓글 조회
+
+    // 특정 게시글의 모든 댓글 (최신순)
+    List<CommentEntity> findByPostIdOrderByCreateDateDesc(Long postId);
+
+    // 특정 회원 이메일로 작성된 댓글
+    List<CommentEntity> findByWriterMemberEmail(String email);
 }

@@ -18,7 +18,7 @@ public class MessageEntity {
     private String sender;
     private String receiver;
     private String content;
-
+    private String imagePath; // 이미지 경로 필드 추가
     private LocalDateTime timestamp; // 타임스탬프 필드 추가
 
     // 기본 생성자 및 setter, getter는 @Getter, @Setter로 처리됨

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>알림</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .notification-item {
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .notification-item:hover {
+            background-color: #f5f5f5;
+        }
+        .notification-item.unread {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+        .notification-type {
+            font-weight: bold;
+            color: #2196F3;
+            margin-right: 10px;
+        }
+        .notification-content {
+            margin: 5px 0;
+            color: #666;
+        }
+        .notification-date {
+            font-size: 12px;
+            color: #999;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .back-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>알림</h1>
+            <a href="/main" class="back-button">메인으로</a>
+        </div>
+
+        <div th:if="${notifications != null && !notifications.isEmpty()}">
+            <div th:each="notification : ${notifications}" 
+                 class="notification-item" 
+                 th:classappend="${!notification.isRead} ? 'unread' : ''"
+                 th:onclick="'viewPost(' + ${notification.postId} + ')'">
+                <div>
+                    <span class="notification-type" th:text="${notification.notificationType == 'LIKE' ? '❤️ 좋아요' : '💬 댓글'}"></span>
+                    <span th:text="${notification.actorName != null ? notification.actorName : notification.actorEmail}"></span>님이
+                    <span th:text="${notification.notificationType == 'LIKE' ? '좋아요를 눌렀습니다' : '댓글을 남겼습니다'}"></span>
+                </div>
+                <div class="notification-content" th:text="${notification.postContent}"></div>
+                <div class="notification-date" th:text="${#temporals.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}"></div>
+            </div>
+        </div>
+        <div th:if="${notifications == null || notifications.isEmpty()}" class="empty-message">
+            새로운 알림이 없습니다.
+        </div>
+    </div>
+
+    <script>
+        function viewPostFromNotification(postId, notificationId) {
+            // 알림 읽음 처리
+            if (notificationId) {
+                fetch(`/posts/notifications/read?notificationId=${notificationId}`, {
+                    method: 'POST'
+                }).then(() => {
+                    // 메인 페이지로 이동하고 해당 게시물 모달 열기
+                    window.location.href = `/main?postId=${postId}`;
+                });
+            } else {
+                // 메인 페이지로 이동하고 해당 게시물 모달 열기
+                window.location.href = `/main?postId=${postId}`;
+            }
+        }
+    </script>
+</body>
+</html>
+
