@@ -1,7 +1,9 @@
 #  소셜 미디어 플랫폼 (X/Twitter 스타일)
 
 Spring Boot 기반의 실시간 소셜 미디어 플랫폼입니다. 사용자 간 게시글 공유, 댓글, 좋아요, 실시간 채팅 등의 기능을 제공합니다.
-
+## 구현 GIF
+![Animation2](https://github.com/user-attachments/assets/50a801ca-3d45-4927-882c-017a88aa74b5)
+---
 ##  목차
 
 - [프로젝트 소개](#프로젝트-소개)
@@ -361,7 +363,7 @@ mvn spring-boot:run
 - 파일 업로드/다운로드 처리
 - 예외 처리 및 글로벌 핸들러 구현
 
----![Animation2](https://github.com/user-attachments/assets/50a801ca-3d45-4927-882c-017a88aa74b5)
+---
 
 
 
