@@ -1068,28 +1068,4 @@ A:
 3. Spring Security 도입
 4. 입력값 검증 및 이스케이프 처리
 ```
-
 ---
-
-## 📚 추가 학습 자료
-
-### 추천 도서
-- "스프링 부트와 AWS로 혼자 구현하는 웹 서비스" (이동욱)
-- "자바 ORM 표준 JPA 프로그래밍" (김영한)
-- "Real MySQL" (이성욱)
-
-### 온라인 강의
-- 인프런: "스프링 부트 - 핵심 원리와 활용" (김영한)
-- 인프런: "실전! 스프링 부트와 JPA 활용1" (김영한)
-
-### 공식 문서
-- [Spring Boot Reference Documentation](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
-- [Spring Data JPA Documentation](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/)
-- [WebSocket Documentation](https://docs.spring.io/spring-framework/reference/web/websocket.html)
-
----
-
-**마지막 업데이트**: 2025년 11월
-
-**작성자**: 프로젝트 개발자
-

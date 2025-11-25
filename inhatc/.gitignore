@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# User-uploaded media (profile & post images)
+src/main/resources/**/*@*
+src/main/resources/**/*@*/**
+src/main/resources/static/**/messages/**

@@ -1,0 +1,32 @@
+[Unit]
+Description=Inhatc Spring Boot Application
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=DEPLOY_PATH/app
+ExecStart=/usr/bin/java -jar -Dspring.profiles.active=prod DEPLOY_PATH/app/inhatc-0.0.1-SNAPSHOT.jar
+ExecStop=/bin/kill -15 $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=inhatc
+
+# 환경 변수 설정
+Environment="JAVA_HOME=/usr/lib/jvm/default-java"
+Environment="UPLOAD_BASE_DIR=DEPLOY_PATH/uploads"
+Environment="UPLOAD_POSTS_DIR=DEPLOY_PATH/uploads/posts"
+Environment="UPLOAD_PROFILE_DIR=DEPLOY_PATH/uploads/profiles"
+Environment="UPLOAD_MESSAGES_DIR=DEPLOY_PATH/uploads/messages"
+
+# 메모리 설정 (필요에 따라 조정)
+Environment="JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC"
+
+[Install]
+WantedBy=multi-user.target
+
+
+
