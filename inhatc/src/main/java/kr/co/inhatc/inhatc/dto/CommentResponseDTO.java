@@ -3,12 +3,17 @@ package kr.co.inhatc.inhatc.dto;
 import java.time.LocalDateTime;
 
 import kr.co.inhatc.inhatc.entity.CommentEntity;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CommentResponseDTO {
     private Long id; // 댓글 ID
     private Long post; // 댓글이 속한 게시글 ID
@@ -18,18 +23,6 @@ public class CommentResponseDTO {
     private String writerProfile; // 작성자 프로필 이미지 경로
     private LocalDateTime createdDate; // 생성일
 
-    @Builder
-    public CommentResponseDTO(Long id, Long post, String comment, String writer, String writerProfile,
-    String writerName,
-                              LocalDateTime createdDate) {
-        this.id = id;
-        this.post = post;
-        this.comment = comment;
-        this.writer = writer;
-        this.writerName = writerName;
-        this.writerProfile = writerProfile;
-        this.createdDate = createdDate;
-    }
 
     public CommentResponseDTO(CommentEntity commentEntity) {
         this.id = commentEntity.getId();
