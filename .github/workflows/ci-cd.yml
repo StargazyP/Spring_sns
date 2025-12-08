@@ -37,11 +37,10 @@ jobs:
         run: |
           mvn clean package -DskipTests
 
-      - name: Run tests (optional)
+      - name: Run tests
         working-directory: ./inhatc
         run: |
-          mvn test || echo "Tests failed but continuing build..."
-        continue-on-error: true
+          mvn test
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
