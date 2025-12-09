@@ -1,11 +1,6 @@
-version: '3.8'
-
 services:
-  # Spring Boot 애플리케이션 서비스
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: stargazyp2/spring-sns:latest   # ← GitHub Actions로 push한 이미지 사용
     container_name: spring-sns-app
     restart: unless-stopped
     ports:
@@ -14,7 +9,7 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/member?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=blackser7789
+      - SPRING_DATASOURCE_PASSWORD=!Blackser7789
     depends_on:
       mysql:
         condition: service_healthy
@@ -27,6 +22,7 @@ services:
       retries: 3
       start_period: 40s
 
+
   # MySQL 데이터베이스
   mysql:
     image: mysql:8.0
@@ -35,10 +31,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: blackser7789
+      MYSQL_ROOT_PASSWORD: "!Blackser7789"
       MYSQL_DATABASE: member
       MYSQL_USER: user
-      MYSQL_PASSWORD: blackser7789
+      MYSQL_PASSWORD: "!Blackser7789"
       TZ: Asia/Seoul
     volumes:
       - mysql_data:/var/lib/mysql
