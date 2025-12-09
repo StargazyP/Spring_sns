@@ -110,7 +110,7 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             cd /home/${{ secrets.SSH_USERNAME }}/포트폴리오/Spring_sns || cd /home/${{ secrets.SSH_USERNAME }}/spring_sns_git/inhatc
-            docker compose pull app || echo "이미지가 없거나 로컬 빌드 사용"
+            docker compose pull app || echo "이미지가 없거나 로컬 빌드 사용!"
             docker compose up -d --build
             docker compose ps
             docker compose logs --tail=50 app
