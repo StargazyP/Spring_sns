@@ -1,4 +1,5 @@
 package kr.co.inhatc.inhatc.repository;
+
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import kr.co.inhatc.inhatc.entity.CommentEntity;
+
 public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
 
     // 특정 게시글의 모든 댓글 (최신순)

@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// CommentEntity
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

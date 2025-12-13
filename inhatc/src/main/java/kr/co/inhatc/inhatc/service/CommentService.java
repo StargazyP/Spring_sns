@@ -14,7 +14,7 @@ import kr.co.inhatc.inhatc.dto.CommentResponseDTO;
 import kr.co.inhatc.inhatc.entity.CommentEntity;
 import kr.co.inhatc.inhatc.entity.MemberEntity;
 import kr.co.inhatc.inhatc.entity.PostEntity;
-import kr.co.inhatc.inhatc.repository.CommentRepository; // 수정된 부분: 대문자로 시작하는 클래스명으로 변경
+import kr.co.inhatc.inhatc.repository.CommentRepository;
 import kr.co.inhatc.inhatc.repository.MemberRepository;
 import kr.co.inhatc.inhatc.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
