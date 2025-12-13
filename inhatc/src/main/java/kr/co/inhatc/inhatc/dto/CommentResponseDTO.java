@@ -3,7 +3,6 @@ package kr.co.inhatc.inhatc.dto;
 import java.time.LocalDateTime;
 
 import kr.co.inhatc.inhatc.entity.CommentEntity;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,8 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class CommentResponseDTO {
     private Long id; // 댓글 ID
     private Long post; // 댓글이 속한 게시글 ID
