@@ -15,16 +15,18 @@ import jakarta.servlet.http.HttpSession;
 import kr.co.inhatc.inhatc.dto.NotificationDTO;
 import kr.co.inhatc.inhatc.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/posts")
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationController {
 
     private final NotificationService notificationService;
 
     /**
-     * 알림 확인 페이지 (HTML)
+     * 알림 확인 페이지 (HTML) - 읽지 않은 알림만
      */
     @GetMapping("/check")
     public String checkNotifications(HttpSession session, Model model) {
@@ -38,7 +40,7 @@ public class NotificationController {
             model.addAttribute("notifications", notifications);
             model.addAttribute("loginEmail", loginEmail);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("알림 조회 중 오류 발생: loginEmail={}", loginEmail, e);
             // 에러 발생 시 빈 리스트로 처리
             model.addAttribute("notifications", java.util.Collections.emptyList());
             model.addAttribute("loginEmail", loginEmail);
@@ -49,7 +51,32 @@ public class NotificationController {
     }
 
     /**
-     * 알림 조회 API (JSON)
+     * 알림 페이지 (HTML) - 모든 알림
+     */
+    @GetMapping("/notifications/page")
+    public String notificationsPage(HttpSession session, Model model) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return "redirect:/";
+        }
+
+        try {
+            List<NotificationDTO> notifications = notificationService.getAllNotifications(loginEmail);
+            model.addAttribute("notifications", notifications);
+            model.addAttribute("loginEmail", loginEmail);
+        } catch (Exception e) {
+            log.error("알림 조회 중 오류 발생: loginEmail={}", loginEmail, e);
+            // 에러 발생 시 빈 리스트로 처리
+            model.addAttribute("notifications", java.util.Collections.emptyList());
+            model.addAttribute("loginEmail", loginEmail);
+            model.addAttribute("error", "알림을 불러오는 중 오류가 발생했습니다.");
+        }
+
+        return "notifications"; // notifications.html 템플릿 사용
+    }
+
+    /**
+     * 알림 조회 API (JSON) - 읽지 않은 알림만
      */
     @GetMapping("/notifications")
     @ResponseBody
@@ -63,7 +90,27 @@ public class NotificationController {
             List<NotificationDTO> notifications = notificationService.getUnreadNotifications(loginEmail);
             return ResponseEntity.ok(notifications);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("알림 조회 API 오류 발생: loginEmail={}", loginEmail, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 모든 알림 조회 API (JSON) - 읽음/안읽음 모두
+     */
+    @GetMapping("/notifications/all")
+    @ResponseBody
+    public ResponseEntity<List<NotificationDTO>> getAllNotifications(HttpSession session) {
+        String loginEmail = (String) session.getAttribute("loginEmail");
+        if (loginEmail == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            List<NotificationDTO> notifications = notificationService.getAllNotifications(loginEmail);
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            log.error("전체 알림 조회 API 오류 발생: loginEmail={}", loginEmail, e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -83,10 +130,11 @@ public class NotificationController {
 
         try {
             notificationService.markAsRead(notificationId);
+            log.debug("알림 읽음 처리: notificationId={}, loginEmail={}", notificationId, loginEmail);
             return ResponseEntity.ok("알림이 읽음 처리되었습니다.");
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("알림 읽음 처리 실패: " + e.getMessage());
+            log.error("알림 읽음 처리 실패: notificationId={}, loginEmail={}", notificationId, loginEmail, e);
+            return ResponseEntity.status(500).body("알림 읽음 처리 실패: 서버 오류가 발생했습니다.");
         }
     }
 
@@ -103,10 +151,11 @@ public class NotificationController {
 
         try {
             notificationService.markAllAsRead(loginEmail);
+            log.info("모든 알림 읽음 처리: loginEmail={}", loginEmail);
             return ResponseEntity.ok("모든 알림이 읽음 처리되었습니다.");
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("알림 읽음 처리 실패: " + e.getMessage());
+            log.error("모든 알림 읽음 처리 실패: loginEmail={}", loginEmail, e);
+            return ResponseEntity.status(500).body("알림 읽음 처리 실패: 서버 오류가 발생했습니다.");
         }
     }
 }

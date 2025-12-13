@@ -1,18 +1,22 @@
 package kr.co.inhatc.inhatc.service;
 
-import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import lombok.extern.slf4j.Slf4j;
 
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
 import kr.co.inhatc.inhatc.entity.LikeEntity;
@@ -25,13 +29,16 @@ import kr.co.inhatc.inhatc.repository.MemberRepository;
 import kr.co.inhatc.inhatc.repository.PostRepository;
 
 @Service
+@Slf4j
 public class PostService {
 
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
     private final LikeRepository likeRepository;
     private final NotificationService notificationService;
-    private final String baseUploadDir = "C:/Users/jdajs/spring test/inhatc/src/main/resources/";
+    
+    @Value("${app.upload.posts-dir}")
+    private String postsUploadDir;
 
     // @Lazy를 생성자 파라미터에 적용하여 순환 참조 방지
     public PostService(PostRepository postRepository, 
@@ -45,45 +52,54 @@ public class PostService {
     }
 
     /**
-     * ✅ 회원 ID 기준 조회
+     * ✅ 회원 ID 기준 조회 (N+1 문제 해결)
      */
     public List<PostResponseDTO> findByMemberId(Long memberId) {
-        List<PostEntity> posts = postRepository.findByMemberEmailOrderByIdDesc(
-                memberRepository.findById(memberId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND))
-                        .getMemberEmail());
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findByMemberEmailWithComments(member.getMemberEmail());
 
+        // 동일한 회원의 게시글이므로 Member는 한 번만 조회
         return posts.stream()
-                .map(post -> {
-                    MemberEntity member = memberRepository.findByMemberEmail(post.getMemberEmail())
-                            .orElse(null);
-                    return PostResponseDTO.fromEntity(post, member);
-                })
+                .map(post -> PostResponseDTO.fromEntity(post, member))
                 .collect(Collectors.toList());
     }
 
     /**
-     * ✅ 회원 이름 기준 조회
+     * ✅ 회원 이름 기준 조회 (N+1 문제 해결)
      */
     public List<PostResponseDTO> findByMemberName(String memberName) {
         List<MemberEntity> members = memberRepository.findByMemberName(memberName);
-        List<PostResponseDTO> result = new ArrayList<>();
-
-        for (MemberEntity member : members) {
-            List<PostEntity> posts = postRepository.findByMemberEmailOrderByIdDesc(member.getMemberEmail());
-            for (PostEntity post : posts) {
-                result.add(PostResponseDTO.fromEntity(post, member));
-            }
+        
+        if (members.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return result;
+        // 모든 회원의 이메일 수집
+        List<String> memberEmails = members.stream()
+                .map(MemberEntity::getMemberEmail)
+                .collect(Collectors.toList());
+
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findByMemberEmailsWithComments(memberEmails);
+
+        // Map으로 변환하여 O(1) 조회 가능하도록 최적화
+        Map<String, MemberEntity> memberMap = members.stream()
+                .collect(Collectors.toMap(MemberEntity::getMemberEmail, member -> member));
+
+        return posts.stream()
+                .map(post -> PostResponseDTO.fromEntity(post, memberMap.get(post.getMemberEmail())))
+                .collect(Collectors.toList());
     }
 
     /**
-     * ✅ 회원 이메일 기준으로 게시글 조회 (삭제되지 않은 것만)
+     * ✅ 회원 이메일 기준으로 게시글 조회 (삭제되지 않은 것만, N+1 문제 해결)
      */
     public List<PostResponseDTO> findByMemberEmail(String memberEmail) {
-        List<PostEntity> posts = postRepository.findByMemberEmailOrderByIdDesc(memberEmail);
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findByMemberEmailWithComments(memberEmail);
         MemberEntity member = memberRepository.findByMemberEmail(memberEmail).orElse(null);
 
         return posts.stream()
@@ -93,32 +109,52 @@ public class PostService {
     }
 
     /**
-     * ✅ 삭제 여부 기준 조회
+     * ✅ 삭제 여부 기준 조회 (N+1 문제 해결)
      */
     public List<PostResponseDTO> findAllByDeleteYn(char deleteYn) {
-        List<PostEntity> posts = postRepository.findByDeleteYnOrderByCreatedDateDesc(deleteYn);
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findAllWithCommentsByDeleteYn(deleteYn);
+
+        // 모든 게시글의 memberEmail 수집
+        List<String> memberEmails = posts.stream()
+                .map(PostEntity::getMemberEmail)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 한 번의 쿼리로 모든 Member 조회 (N+1 방지)
+        List<MemberEntity> members = memberRepository.findByMemberEmailIn(memberEmails);
+        
+        // Map으로 변환하여 O(1) 조회 가능하도록 최적화
+        Map<String, MemberEntity> memberMap = members.stream()
+                .collect(Collectors.toMap(MemberEntity::getMemberEmail, member -> member));
 
         return posts.stream()
-                .map(post -> {
-                    MemberEntity member = memberRepository.findByMemberEmail(post.getMemberEmail())
-                            .orElse(null);
-                    return PostResponseDTO.fromEntity(post, member);
-                })
+                .map(post -> PostResponseDTO.fromEntity(post, memberMap.get(post.getMemberEmail())))
                 .collect(Collectors.toList());
     }
 
     /**
-     * ✅ 삭제되지 않은 게시글 전체 조회
+     * ✅ 삭제되지 않은 게시글 전체 조회 (N+1 문제 해결)
      */
     public List<PostResponseDTO> findAll() {
-        List<PostEntity> posts = postRepository.findByDeleteYnOrderByCreatedDateDesc('N');
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findAllWithCommentsByDeleteYn('N');
+
+        // 모든 게시글의 memberEmail 수집
+        List<String> memberEmails = posts.stream()
+                .map(PostEntity::getMemberEmail)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 한 번의 쿼리로 모든 Member 조회 (N+1 방지)
+        List<MemberEntity> members = memberRepository.findByMemberEmailIn(memberEmails);
+        
+        // Map으로 변환하여 O(1) 조회 가능하도록 최적화
+        Map<String, MemberEntity> memberMap = members.stream()
+                .collect(Collectors.toMap(MemberEntity::getMemberEmail, member -> member));
 
         return posts.stream()
-                .map(post -> {
-                    MemberEntity member = memberRepository.findByMemberEmail(post.getMemberEmail())
-                            .orElse(null);
-                    return PostResponseDTO.fromEntity(post, member);
-                })
+                .map(post -> PostResponseDTO.fromEntity(post, memberMap.get(post.getMemberEmail())))
                 .collect(Collectors.toList());
     }
 
@@ -162,7 +198,7 @@ public class PostService {
                 notificationService.createLikeNotification(postId, email);
             } catch (Exception e) {
                 // 알림 생성 실패해도 좋아요는 정상 처리
-                System.err.println("알림 생성 실패: " + e.getMessage());
+                log.warn("알림 생성 실패: postId={}, email={}", postId, email, e);
             }
         }
         return existingLike.isEmpty();
@@ -170,45 +206,10 @@ public class PostService {
 
     /**
      * 게시글 이미지 업로드
+     * 공통 유틸리티 사용으로 중복 코드 제거
      */
     public String imgupload(MultipartFile file, String email) throws IOException {
-        if (file == null || file.isEmpty()) {
-            return null;
-        }
-
-        // 외부 절대 경로 (게시물 이미지 저장 경로)
-        String baseDir = "C:/Users/jdajs/spring test/inhatc/src/main/java/kr/co/inhatc/inhatc/";
-
-        // 사용자 폴더 생성
-        File userDir = new File(baseDir, email);
-        if (!userDir.exists()) {
-            if (!userDir.mkdirs()) {
-                throw new IOException("사용자 디렉토리 생성 실패: " + userDir.getAbsolutePath());
-            }
-        }
-
-        // 파일 확장자 추출
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.lastIndexOf('.') != -1) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf('.') + 1);
-        }
-
-        // 새 파일명 생성 (날짜 + 밀리초)
-        String newFilename = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-        if (!extension.isEmpty()) {
-            newFilename += "." + extension;
-        }
-
-        // 파일 저장
-        File dest = new File(userDir, newFilename);
-        file.transferTo(dest);
-
-        // DB에 저장할 URL 경로
-        String urlPath = "/posts/" + email + "/" + newFilename;
-        System.out.println("파일 저장 및 DB 기록 URL: " + urlPath);
-
-        return urlPath;
+        return kr.co.inhatc.inhatc.util.FileUploadService.uploadPostImage(file, email, postsUploadDir);
     }
 
     @Transactional
@@ -239,9 +240,44 @@ public class PostService {
                 .hits(0)
                 .love(0)
                 .deleteYn('N')
+                .createdDate(LocalDateTime.now()) // 명시적으로 생성 날짜 설정
                 .build();
 
         postRepository.save(post);
+    }
+
+    /**
+     * ✅ 페이징 지원: 삭제되지 않은 게시글 조회 (페이징)
+     */
+    public Page<PostResponseDTO> findAll(Pageable pageable) {
+        // @EntityGraph로 Comments를 한 번에 조회
+        Page<PostEntity> postPage = postRepository.findByDeleteYnOrderByCreatedDateDesc('N', pageable);
+        
+        // 모든 게시글의 memberEmail 수집
+        List<String> memberEmails = postPage.getContent().stream()
+                .map(PostEntity::getMemberEmail)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 한 번의 쿼리로 모든 Member 조회 (N+1 방지)
+        List<MemberEntity> members = memberRepository.findByMemberEmailIn(memberEmails);
+        
+        // Map으로 변환하여 O(1) 조회 가능하도록 최적화
+        Map<String, MemberEntity> memberMap = members.stream()
+                .collect(Collectors.toMap(MemberEntity::getMemberEmail, member -> member));
+
+        return postPage.map(post -> PostResponseDTO.fromEntity(post, memberMap.get(post.getMemberEmail())));
+    }
+
+    /**
+     * ✅ 페이징 지원: 특정 이메일의 게시글 조회 (페이징)
+     */
+    public Page<PostResponseDTO> findByMemberEmail(String memberEmail, Pageable pageable) {
+        // @EntityGraph로 Comments를 한 번에 조회
+        Page<PostEntity> postPage = postRepository.findByMemberEmailOrderByIdDesc(memberEmail, pageable);
+        MemberEntity member = memberRepository.findByMemberEmail(memberEmail).orElse(null);
+
+        return postPage.map(post -> PostResponseDTO.fromEntity(post, member));
     }
 
 }

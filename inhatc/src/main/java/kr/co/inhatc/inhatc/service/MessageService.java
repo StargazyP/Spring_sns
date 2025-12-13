@@ -14,8 +14,10 @@ import kr.co.inhatc.inhatc.dto.MessageDTO;
 import kr.co.inhatc.inhatc.entity.MessageEntity;
 import kr.co.inhatc.inhatc.repository.MessageRepository;
 import kr.co.inhatc.inhatc.repository.MemberRepository;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class MessageService {
 
     private final MessageRepository messageRepository;
@@ -33,7 +35,7 @@ public class MessageService {
         message.setContent(messageDTO.getContent());
         message.setImagePath(messageDTO.getImagePath()); // 이미지 경로 설정
         message.setTimestamp(messageDTO.getTimestamp()); // 타임스탬프 설정
-        System.out.println("Saving message: " + message);
+        log.debug("메시지 저장: sender={}, receiver={}", message.getSender(), message.getReceiver());
         return messageRepository.save(message);
     }
     
@@ -43,7 +45,7 @@ public class MessageService {
             List<MessageEntity> messages = messageRepository.findBySenderAndReceiverOrSenderAndReceiver(
                 sender, receiver, 
                 receiver, sender);
-                System.out.println("Fetching message history for sender: " + sender + " and receiver: " + receiver);
+                log.debug("메시지 히스토리 조회: sender={}, receiver={}, 메시지 수={}", sender, receiver, messages.size());
                 return messages.stream().map(message -> {
                 MessageDTO dto = new MessageDTO();
                 dto.setSender(message.getSender());
@@ -70,7 +72,7 @@ public class MessageService {
 
     public List<MessageDTO> findMessagesByReceiverOrSender(String receiver) {
         List<MessageEntity> messages = messageRepository.findByReceiverOrSender(receiver);
-        System.out.println("Finding messages for receiver: " + receiver);
+        log.debug("메시지 조회: receiver={}, 메시지 수={}", receiver, messages.size());
         return messages.stream().map(message -> {
             MessageDTO dto = new MessageDTO();
             dto.setSender(message.getSender());
@@ -89,16 +91,13 @@ public class MessageService {
      * @return 대화 상대 목록 (ConversationDTO 리스트)
      */
     public List<ConversationDTO> getConversations(String userEmail) {
-        System.out.println("========================================");
-        System.out.println("[DEBUG] MessageService.getConversations 호출됨");
-        System.out.println("  - userEmail (세션 유저): " + userEmail);
+        log.debug("대화 상대 목록 조회: userEmail={}", userEmail);
         
         List<MessageEntity> messages = messageRepository.findConversationsByUserEmail(userEmail);
-        System.out.println("  - 조회된 메시지 수: " + messages.size());
+        log.debug("조회된 메시지 수: {}", messages.size());
         
         if (messages.isEmpty()) {
-            System.out.println("  ⚠️ 메시지가 없음");
-            System.out.println("========================================");
+            log.debug("메시지가 없음: userEmail={}", userEmail);
             return new ArrayList<>();
         }
         
@@ -110,30 +109,25 @@ public class MessageService {
                 ? message.getReceiver() 
                 : message.getSender();
             
-            System.out.println("  - 메시지 처리: sender=" + message.getSender() + ", receiver=" + message.getReceiver() + ", otherUser=" + otherUserEmail);
-            
             // 이미 존재하지 않거나 더 최신 메시지인 경우 업데이트
             if (!conversationMap.containsKey(otherUserEmail)) {
                 conversationMap.put(otherUserEmail, message);
-                System.out.println("    ✅ 새 대화 상대 추가: " + otherUserEmail);
             } else {
                 MessageEntity existingMessage = conversationMap.get(otherUserEmail);
                 if (message.getTimestamp() != null && existingMessage.getTimestamp() != null &&
                     message.getTimestamp().isAfter(existingMessage.getTimestamp())) {
                     conversationMap.put(otherUserEmail, message);
-                    System.out.println("    ✅ 최신 메시지로 업데이트: " + otherUserEmail);
                 } else if (message.getTimestamp() == null && existingMessage.getTimestamp() == null) {
                     // 둘 다 timestamp가 null이면 ID가 큰 것을 사용
                     if (message.getId() != null && existingMessage.getId() != null &&
                         message.getId() > existingMessage.getId()) {
                         conversationMap.put(otherUserEmail, message);
-                        System.out.println("    ✅ 더 큰 ID의 메시지로 업데이트: " + otherUserEmail);
                     }
                 }
             }
         }
         
-        System.out.println("  - 대화 상대 수: " + conversationMap.size());
+        log.debug("대화 상대 수: {}", conversationMap.size());
         
         // ConversationDTO로 변환
         List<ConversationDTO> conversations = new ArrayList<>();
@@ -146,9 +140,8 @@ public class MessageService {
             var memberOptional = memberRepository.findByMemberEmail(otherUserEmail);
             if (memberOptional.isPresent()) {
                 otherUserName = memberOptional.get().getMemberName();
-                System.out.println("  - 사용자 이름 조회: " + otherUserEmail + " -> " + otherUserName);
             } else {
-                System.out.println("  - ⚠️ 사용자 정보 없음: " + otherUserEmail);
+                log.warn("사용자 정보 없음: {}", otherUserEmail);
             }
             
             ConversationDTO conversation = ConversationDTO.builder()
@@ -160,7 +153,6 @@ public class MessageService {
                 .build();
             
             conversations.add(conversation);
-            System.out.println("  - 대화 추가: " + otherUserName + " (" + otherUserEmail + ") - " + lastMessage.getContent());
         }
         
         // 최신 메시지 시간 순으로 정렬
@@ -171,8 +163,7 @@ public class MessageService {
             return b.getLastMessageTime().compareTo(a.getLastMessageTime());
         });
         
-        System.out.println("  ✅ 최종 대화 상대 수: " + conversations.size());
-        System.out.println("========================================");
+        log.debug("최종 대화 상대 수: {}", conversations.size());
         
         return conversations;
     }

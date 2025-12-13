@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
 import kr.co.inhatc.inhatc.service.PostService;
@@ -25,6 +26,9 @@ import lombok.RequiredArgsConstructor;
 public class ImageController {
 
     private final PostService postService;
+    
+    @Value("${app.upload.posts-dir}")
+    private String postsUploadDir;
 
     @GetMapping("/{email}/{filename:.+}")
     public ResponseEntity<Resource> getImage(
@@ -61,7 +65,7 @@ public class ImageController {
             }
 
             // imgsource는 "/posts/{email}/{filename}" 형식
-            // 실제 파일 경로는 "C:/Users/jdajs/spring test/inhatc/src/main/java/kr/co/inhatc/inhatc/{email}/{filename}"
+            // 설정에서 가져온 게시물 이미지 저장 경로 사용
             String imgsource = post.getImgsource();
             String[] parts = imgsource.replace("/posts/", "").split("/", 2);
             
@@ -71,7 +75,7 @@ public class ImageController {
 
             String email = parts[0];
             String filename = parts[1];
-            Path file = Paths.get("C:/Users/jdajs/spring test/inhatc/src/main/java/kr/co/inhatc/inhatc", email, filename);
+            Path file = Paths.get(postsUploadDir, email, filename);
 
             if (!Files.exists(file)) {
                 return ResponseEntity.notFound().build();

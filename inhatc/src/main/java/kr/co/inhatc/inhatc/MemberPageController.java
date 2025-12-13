@@ -15,27 +15,38 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import kr.co.inhatc.inhatc.dto.MemberDTO;
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
 import kr.co.inhatc.inhatc.service.MemberService;
 import kr.co.inhatc.inhatc.service.PostService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/member")
 @RequiredArgsConstructor
+@Validated
+@Slf4j
 public class MemberPageController {
 
     private final MemberService memberService;
     private final PostService postService;
+    
+    @Value("${app.upload.profile-dir}")
+    private String profileUploadDir;
 
     /**
      * 마이페이지 조회
@@ -55,15 +66,7 @@ public class MemberPageController {
         Boolean isOwnerValue = Boolean.valueOf(true); // 본인 페이지이므로 true
         model.addAttribute("isOwner", isOwnerValue); // 명시적으로 Boolean 객체로 변환
         
-        // 상세 디버깅을 위한 로그
-        System.out.println("========================================");
-        System.out.println("[DEBUG] /member/mypage 호출");
-        System.out.println("  - 세션 loginEmail: " + email);
-        System.out.println("  - 조회할 viewedEmail: " + email);
-        System.out.println("  - isOwner 값: " + isOwnerValue);
-        System.out.println("  - isOwner 타입: " + (isOwnerValue != null ? isOwnerValue.getClass().getName() : "null"));
-        System.out.println("  - 두 이메일 비교 결과: " + email.equals(email));
-        System.out.println("========================================");
+        log.debug("마이페이지 조회: email={}, isOwner={}", email, isOwnerValue);
 
         // 사용자의 게시글 목록 조회
         List<PostResponseDTO> userPosts = postService.findByMemberEmail(email);
@@ -77,32 +80,26 @@ public class MemberPageController {
      * 프로필 사진 업로드
      */
     @PostMapping("/upload")
-    public String uploadProfile(@RequestParam("file") MultipartFile file,
-            @RequestParam("loginEmail") String loginEmail,
+    public String uploadProfile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("loginEmail") @NotBlank(message = "이메일은 필수입니다.") @Email(message = "올바른 이메일 형식이 아닙니다.") String loginEmail,
             HttpSession session,
             Model model) {
         // 세션에서 로그인된 사용자 확인
         String sessionEmail = (String) session.getAttribute("loginEmail");
         
-        // 디버깅 로그
-        System.out.println("========================================");
-        System.out.println("[DEBUG] /member/upload 호출");
-        System.out.println("  - 세션 sessionEmail: " + sessionEmail);
-        System.out.println("  - 요청 loginEmail: " + loginEmail);
-        System.out.println("  - 두 이메일 비교: " + (sessionEmail != null && sessionEmail.equals(loginEmail)));
-        System.out.println("========================================");
+        log.debug("프로필 업로드 요청: sessionEmail={}, loginEmail={}", sessionEmail, loginEmail);
         
         // 보안 검증: 세션의 이메일과 요청한 이메일이 일치해야 함
         if (sessionEmail == null) {
-            System.err.println("❌ [보안] 세션에 로그인 정보가 없습니다.");
+            log.warn("프로필 업로드 실패: 세션에 로그인 정보가 없음");
             model.addAttribute("error", "로그인이 필요합니다.");
             return "redirect:/";
         }
         
         if (!sessionEmail.equals(loginEmail)) {
-            System.err.println("❌ [보안] 다른 사용자의 프로필을 수정할 수 없습니다.");
-            System.err.println("  - 세션 이메일: " + sessionEmail);
-            System.err.println("  - 요청 이메일: " + loginEmail);
+            log.warn("프로필 업로드 실패: 다른 사용자의 프로필 수정 시도 - sessionEmail={}, loginEmail={}", 
+                sessionEmail, loginEmail);
             model.addAttribute("error", "본인의 프로필만 수정할 수 있습니다.");
             return "redirect:/member/mypage";
         }
@@ -110,10 +107,13 @@ public class MemberPageController {
         try {
             String result = memberService.storeFile(file, loginEmail);
             model.addAttribute("message", result);
-            System.out.println("✅ 프로필 업로드 성공: " + loginEmail);
+            log.info("프로필 업로드 성공: {}", loginEmail);
+        } catch (IllegalArgumentException e) {
+            log.warn("프로필 업로드 실패 (검증 오류): {}, 사용자={}", e.getMessage(), loginEmail);
+            model.addAttribute("error", String.format(kr.co.inhatc.inhatc.constants.AppConstants.ErrorMessage.UPLOAD_FAILED, e.getMessage()));
         } catch (IOException e) {
-            System.err.println("❌ 프로필 업로드 실패: " + e.getMessage());
-            model.addAttribute("error", "업로드 실패: " + e.getMessage());
+            log.error("프로필 업로드 중 오류 발생: 사용자={}", loginEmail, e);
+            model.addAttribute("error", kr.co.inhatc.inhatc.constants.AppConstants.ErrorMessage.UPLOAD_SERVER_ERROR);
         }
         return "redirect:/member/mypage";
     }
@@ -122,43 +122,34 @@ public class MemberPageController {
      * 게시글 삭제
      */
     @PostMapping("/delete")
-    public String deletePost(@RequestParam("id") Long postId, HttpSession session) {
+    public String deletePost(@RequestParam("id") @jakarta.validation.constraints.NotNull(message = "게시글 ID는 필수입니다.") Long postId, HttpSession session) {
         String sessionEmail = (String) session.getAttribute("loginEmail");
         
-        // 디버깅 로그
-        System.out.println("========================================");
-        System.out.println("[DEBUG] /member/delete 호출");
-        System.out.println("  - 세션 sessionEmail: " + sessionEmail);
-        System.out.println("  - 삭제할 postId: " + postId);
-        System.out.println("========================================");
+        log.debug("게시글 삭제 요청: sessionEmail={}, postId={}", sessionEmail, postId);
         
         if (sessionEmail == null) {
-            System.err.println("❌ [보안] 세션에 로그인 정보가 없습니다.");
+            log.warn("게시글 삭제 실패: 세션에 로그인 정보가 없음");
             return "redirect:/";
         }
 
         // 게시글 작성자 확인 (보안 강화)
         PostResponseDTO post = postService.findById(postId);
         if (post == null) {
-            System.err.println("❌ [보안] 게시글을 찾을 수 없습니다. postId: " + postId);
+            log.warn("게시글 삭제 실패: 게시글을 찾을 수 없음 - postId={}", postId);
             return "redirect:/member/mypage";
         }
         
         String writerEmail = post.getWriterEmail();
         boolean isOwner = sessionEmail.equals(writerEmail);
         
-        System.out.println("  - 게시글 작성자 writerEmail: " + writerEmail);
-        System.out.println("  - 세션 이메일 == 작성자 이메일: " + isOwner);
-        
         if (!isOwner) {
-            System.err.println("❌ [보안] 다른 사용자의 게시글을 삭제할 수 없습니다.");
-            System.err.println("  - 세션 이메일: " + sessionEmail);
-            System.err.println("  - 작성자 이메일: " + writerEmail);
+            log.warn("게시글 삭제 실패: 다른 사용자의 게시글 삭제 시도 - sessionEmail={}, writerEmail={}, postId={}", 
+                sessionEmail, writerEmail, postId);
             return "redirect:/member/mypage";
         }
         
         postService.delete(postId);
-        System.out.println("✅ 게시글 삭제 성공: postId=" + postId);
+        log.info("게시글 삭제 성공: postId={}, 사용자={}", postId, sessionEmail);
         return "redirect:/member/mypage";
     }
 
@@ -183,14 +174,13 @@ public class MemberPageController {
     @GetMapping("/Userimgsource/{email}")
     public ResponseEntity<Resource> getUserImage(@PathVariable String email) throws MalformedURLException {
         try {
-            // 실제 저장 경로: C:\Users\jdajs\spring test\inhatc\src\main\resources\static\{email}\profile.{ext}
-            String baseDir = "C:/Users/jdajs/spring test/inhatc/src/main/resources/static";
+            // 설정에서 가져온 프로필 이미지 저장 경로
             Path file = null;
             
             // 확장자별로 시도 (png, jpg, jpeg)
             String[] extensions = {"png", "jpg", "jpeg"};
             for (String ext : extensions) {
-                Path testPath = Paths.get(baseDir, email, "profile." + ext);
+                Path testPath = Paths.get(profileUploadDir, email, "profile." + ext);
                 if (Files.exists(testPath)) {
                     file = testPath;
                     break;
@@ -199,7 +189,7 @@ public class MemberPageController {
             
             // 프로필 이미지가 없으면 기본 이미지 사용
             if (file == null) {
-                file = Paths.get(baseDir, "images", "default-profile.png");
+                file = Paths.get(profileUploadDir, "images", "default-profile.png");
                 if (!Files.exists(file)) {
                     return ResponseEntity.notFound().build();
                 }
@@ -224,7 +214,7 @@ public class MemberPageController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"")
                     .body(resource);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("프로필 이미지 조회 중 오류 발생: email={}", email, e);
             return ResponseEntity.notFound().build();
         }
     }
@@ -268,19 +258,8 @@ public class MemberPageController {
             model.addAttribute("loginEmail", loginEmail);
             model.addAttribute("viewedEmail", decodedEmail); // 디버깅을 위해 추가
             
-            // 상세 디버깅을 위한 로그
-            System.out.println("========================================");
-            System.out.println("[DEBUG] /member/profile/{email} 호출");
-            System.out.println("  - URL 파라미터 email (인코딩됨): " + email);
-            System.out.println("  - 디코딩된 decodedEmail: " + decodedEmail);
-            System.out.println("  - 세션 loginEmail: " + loginEmail);
-            System.out.println("  - viewedMember.memberEmail: " + (viewedMember != null ? viewedMember.getMemberEmail() : "null"));
-            System.out.println("  - loginEmail == decodedEmail 비교: " + (loginEmail != null && loginEmail.equals(decodedEmail)));
-            System.out.println("  - loginEmail.equals(decodedEmail) 결과: " + (loginEmail != null ? loginEmail.equals(decodedEmail) : "loginEmail is null"));
-            System.out.println("  - isOwner (primitive): " + isOwnerPrimitive);
-            System.out.println("  - isOwner (Boolean 객체): " + isOwnerValue);
-            System.out.println("  - isOwner 타입: " + (isOwnerValue != null ? isOwnerValue.getClass().getName() : "null"));
-            System.out.println("========================================");
+            log.debug("사용자 프로필 조회: loginEmail={}, viewedEmail={}, isOwner={}", 
+                loginEmail, decodedEmail, isOwnerValue);
 
             // 해당 사용자의 게시글 목록 조회
             List<PostResponseDTO> userPosts = postService.findByMemberEmail(decodedEmail);
@@ -289,7 +268,7 @@ public class MemberPageController {
 
             return "mypage";
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("사용자 프로필 조회 중 오류 발생: email={}", email, e);
             // 사용자를 찾을 수 없으면 메인 페이지로 리다이렉트
             return "redirect:/main";
         }
@@ -298,10 +277,15 @@ public class MemberPageController {
 
     /**
      * 로그아웃
+     * 세션 무효화 처리
      */
     @PostMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
+    public String logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+            log.info("로그아웃: 세션 무효화 완료");
+        }
         return "redirect:/";
     }
 }

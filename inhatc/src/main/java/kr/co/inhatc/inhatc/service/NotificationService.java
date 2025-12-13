@@ -95,6 +95,24 @@ public class NotificationService {
     }
 
     /**
+     * 사용자의 모든 알림 조회 (읽음/안읽음 모두)
+     */
+    public List<NotificationDTO> getAllNotifications(String recipientEmail) {
+        List<NotificationEntity> notifications = notificationRepository
+                .findByRecipientEmailOrderByCreatedAtDesc(recipientEmail);
+
+        return notifications.stream()
+                .map(notification -> {
+                    NotificationDTO dto = NotificationDTO.fromEntity(notification);
+                    // actorName 설정
+                    memberRepository.findByMemberEmail(notification.getActorEmail())
+                            .ifPresent(member -> dto.setActorName(member.getMemberName()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 알림 읽음 처리
      */
     public void markAsRead(Long notificationId) {

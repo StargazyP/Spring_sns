@@ -2,6 +2,9 @@ package kr.co.inhatc.inhatc;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,9 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import kr.co.inhatc.inhatc.dto.CommentRequestDTO;
 import kr.co.inhatc.inhatc.dto.CommentResponseDTO;
 import kr.co.inhatc.inhatc.service.CommentService;
@@ -26,13 +31,25 @@ public class CommentController {
     private final CommentService commentService;
 
     /**
-     * 특정 게시글의 모든 댓글 조회
+     * 특정 게시글의 모든 댓글 조회 (페이징 지원)
      * GET /api/posts/{postId}/comments
+     * GET /api/posts/{postId}/comments?page=0&size=20 (페이징 사용)
+     * GET /api/posts/{postId}/comments?all=true (전체 조회, 페이징 없음)
      */
     @GetMapping("/{postId}/comments")
-    public ResponseEntity<List<CommentResponseDTO>> getComments(@PathVariable Long postId) {
-        List<CommentResponseDTO> comments = commentService.getCommentsByPostId(postId);
-        return ResponseEntity.ok(comments);
+    public ResponseEntity<?> getComments(
+            @PathVariable Long postId,
+            @RequestParam(required = false, defaultValue = "false") boolean all,
+            @PageableDefault(size = 20, sort = "createDate", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        if (all) {
+            // 전체 조회 (기존 방식, 하위 호환성 유지)
+            List<CommentResponseDTO> comments = commentService.getCommentsByPostId(postId);
+            return ResponseEntity.ok(comments);
+        } else {
+            // 페이징 조회
+            Page<CommentResponseDTO> commentPage = commentService.getCommentsByPostId(postId, pageable);
+            return ResponseEntity.ok(commentPage);
+        }
     }
 
     /**
@@ -42,7 +59,7 @@ public class CommentController {
     @PostMapping("/{postId}/comments")
     public ResponseEntity<CommentResponseDTO> createComment(
             @PathVariable Long postId,
-            @RequestBody CommentRequestDTO commentRequestDTO,
+            @Valid @RequestBody CommentRequestDTO commentRequestDTO,
             HttpSession session) {
 
         // 로그인된 사용자 이메일을 세션에서 가져옴
@@ -60,7 +77,7 @@ public class CommentController {
     public ResponseEntity<String> updateComment(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @RequestBody CommentRequestDTO requestDTO
+            @Valid @RequestBody CommentRequestDTO requestDTO
     ) {
         commentService.updateComment(postId, commentId, requestDTO);
         return ResponseEntity.ok("댓글이 수정되었습니다.");

@@ -37,7 +37,7 @@ public class CommentEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String comment;
 
-    /** ✅ member_email 기준으로 연결 */
+    /**  member_email 기준으로 연결 */
     @Column(name = "member_email", nullable = false)
     private String memberEmail;
 
@@ -45,21 +45,27 @@ public class CommentEntity {
     @JoinColumn(name = "member_email", referencedColumnName = "member_email", insertable = false, updatable = false)
     private MemberEntity writer;
 
-    /** ✅ 게시글 연결 */
+    /** 게시글 연결 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private PostEntity post;
+
+    /** 부모 댓글 (대댓글인 경우) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_comment_id")
+    private CommentEntity parentComment;
 
     @Column(name = "create_date", updatable = false)
     @CreatedDate
     private LocalDateTime createDate;
 
     @Builder
-    public CommentEntity(String comment, PostEntity post, MemberEntity writer) {
+    public CommentEntity(String comment, PostEntity post, MemberEntity writer, CommentEntity parentComment) {
         this.comment = comment;
         this.post = post;
         this.writer = writer;
         this.memberEmail = writer.getMemberEmail();
+        this.parentComment = parentComment;
         this.createDate = LocalDateTime.now();
     }
 

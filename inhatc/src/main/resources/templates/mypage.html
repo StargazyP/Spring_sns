@@ -132,19 +132,30 @@
         align-items: center;
       }
 
-      #uploadFormContainer label {
-        font-size: 15px;
+      #profileFileInput {
+        display: none; /* 파일 입력을 숨김 */
+      }
+
+      /* 이미지 업로드 버튼 스타일 (main.html과 동일) */
+      .profile-upload-button {
+        padding: 8px 12px;
+        background-color: #f7f9f9;
         color: #0f1419;
-        font-weight: 500;
-      }
-
-      #uploadFormContainer input[type="file"] {
+        border: 1px solid #eff3f4;
+        border-radius: 20px;
         font-size: 14px;
-        color: #536471;
-        padding: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
-      #uploadFormContainer button {
+      .profile-upload-button:hover {
+        background-color: #eff3f4;
+      }
+
+      #uploadFormContainer button[type="submit"] {
         background-color: #0f1419;
         color: #ffffff;
         border: none;
@@ -154,9 +165,10 @@
         font-weight: 700;
         cursor: pointer;
         transition: background-color 0.2s;
+        margin-top: 8px;
       }
 
-      #uploadFormContainer button:hover {
+      #uploadFormContainer button[type="submit"]:hover {
         background-color: #272c30;
       }
 
@@ -309,11 +321,11 @@
           onclick="location.href='/chat/message';"
         />
 
-        <!-- 알람 / 게시물 확인 -->
+        <!-- 알람 / 게시물 확인: /posts/notifications/page -->
         <img
           src="/images/alram.png"
           alt="Alarm"
-          onclick="location.href='/posts/check';"
+          onclick="location.href='/posts/notifications/page';"
         />
 
         <!-- 로그아웃 -->
@@ -327,8 +339,8 @@
 
       <div class="container">
         <!-- 디버깅 정보 표시 (개발 중에만 표시) -->
-        <div id="debugInfo" style="background-color: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc; font-size: 12px; display: none;">
-          <strong>🔍 디버깅 정보:</strong><br/>
+        <!-- <div id="debugInfo" style="background-color: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc; font-size: 12px; display: none;">
+          <strong>디버깅 정보:</strong><br/>
           세션 loginEmail: <span id="debugLoginEmail" th:text="${loginEmail}">-</span><br/>
           조회 viewedEmail: <span id="debugViewedEmail" th:text="${viewedEmail != null ? viewedEmail : (viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail)}">-</span><br/>
           isOwner 값: <span id="debugIsOwner" th:text="${isOwner}">-</span><br/>
@@ -336,8 +348,8 @@
           isOwner != null: <span id="debugIsOwnerNotNull">-</span><br/>
           isOwner == true: <span id="debugIsOwnerTrue">-</span><br/>
           <button onclick="document.getElementById('debugInfo').style.display='none'">숨기기</button>
-        </div>
-        <button onclick="document.getElementById('debugInfo').style.display='block'" style="margin-bottom: 10px; padding: 5px 10px; font-size: 12px;">디버깅 정보 보기</button>
+        </div> -->
+        <!-- <button onclick="document.getElementById('debugInfo').style.display='block'" style="margin-bottom: 10px; padding: 5px 10px; font-size: 12px;">디버깅 정보 보기</button> -->
         
         <div class="profile-img-container">
           <!-- 프로필 이미지 표시 (viewedMember 또는 loggedInMember 사용) -->
@@ -349,11 +361,8 @@
             onerror="this.src='/images/default-profile.png'"
           />
           <div>
-            <th:block th:if="${isOwner != null and isOwner == true}">
-              <span>welcome! </span>
-            </th:block>
             <span th:text="${viewedMember != null ? viewedMember.memberName : loggedInMember.memberName}"></span>
-            <th:block th:if="${isOwner == null or isOwner == false}">
+            <th:block th:if="${isOwner == null or !isOwner}">
               <span>님의 프로필</span>
             </th:block>
           </div>
@@ -362,7 +371,7 @@
           </div>
           
           <!-- 메시지 버튼 (다른 유저 페이지일 때만 표시) -->
-          <div th:if="${isOwner == null or isOwner == false}" style="margin-top: 16px;">
+          <div th:if="${isOwner == null or !isOwner}" style="margin-top: 16px;">
             <a 
               th:href="@{/chat/message(receiverEmail=${viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail})}"
               style="background-color: #1d9bf0; color: #ffffff; border: none; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin: 0 auto; text-decoration: none;">
@@ -372,16 +381,18 @@
           </div>
         </div>
 
-        <!-- 파일 업로드 폼 (본인 페이지일 때만 표시) -->
-        <div id="uploadFormContainer" th:if="${isOwner != null and isOwner == true}">
+        <!-- 파일 업로드 폼 -->
+        <div id="uploadFormContainer">
           <form
             id="profileUploadForm"
             th:action="@{/member/upload}"
             method="post"
             enctype="multipart/form-data"
           >
-            <label for="file">프로필 사진 변경</label>
-            <input type="file" id="file" name="file" required />
+            <input type="file" id="profileFileInput" name="file" accept="image/*" required />
+            <button type="button" class="profile-upload-button" onclick="document.getElementById('profileFileInput').click()">
+              프로필 사진 변경
+            </button>
 
             <!-- 로그인 이메일을 함께 전송 -->
             <input type="hidden" name="loginEmail" th:value="${loginEmail}" />
@@ -394,13 +405,16 @@
         <div id="post-list">
           <h3>작성한 게시글</h3>
           <div th:if="${userpost != null && !userpost.isEmpty() || userPosts != null && !userPosts.isEmpty()}">
-            <div th:each="post : ${userpost != null ? userpost : userPosts}" class="card">
+            <div th:each="post : ${userpost != null ? userpost : userPosts}" 
+                 class="card post-card" 
+                 th:attr="data-post-id=${post.id}"
+                 style="cursor: pointer;">
               <!-- 게시글 삭제 버튼 (본인 페이지일 때만 표시) -->
               <button
                 th:if="${isOwner != null and isOwner == true}"
                 class="delete-button"
                 th:attr="data-post-id=${post.id}"
-                onclick="deletePost(this)"
+                onclick="event.stopPropagation(); deletePost(this);"
                 >×</button>
               <div class="card-header" th:text="${post.writer}">No Title</div>
               <div class="card-body" th:text="${post.content}">No Content</div>
@@ -429,164 +443,42 @@
     </div>
 
     <script>
-      // 페이지 로드 시 디버깅 정보 출력 및 보안 검증
+      // 게시글 카드 클릭 이벤트 설정
+      document.addEventListener('DOMContentLoaded', function() {
+        const postCards = document.querySelectorAll('.post-card');
+        postCards.forEach(function(card) {
+          card.addEventListener('click', function(e) {
+            // 삭제 버튼 클릭 시에는 이벤트 전파 방지
+            if (e.target.classList.contains('delete-button') || e.target.closest('.delete-button')) {
+              return;
+            }
+            const postId = card.getAttribute('data-post-id');
+            if (postId) {
+              window.location.href = `/posts/${postId}`;
+            }
+          });
+        });
+      });
+
+      // 프로필 업로드 폼이 항상 표시되도록 보장
       window.onload = function() {
-        const isOwner = /*[[${isOwner}]]*/ null;
-        const loginEmail = /*[[${loginEmail}]]*/ null;
-        const viewedEmail = /*[[${viewedEmail != null ? viewedEmail : (viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail)}]]*/ null;
-        
-        console.log("========================================");
-        console.log("[DEBUG] mypage.html 로드됨");
-        console.log("  - 세션 loginEmail:", loginEmail);
-        console.log("  - 조회 viewedEmail:", viewedEmail);
-        console.log("  - isOwner 값:", isOwner);
-        console.log("  - isOwner 타입:", typeof isOwner);
-        console.log("  - isOwner != null:", isOwner != null);
-        console.log("  - isOwner == true:", isOwner == true);
-        console.log("  - isOwner === true:", isOwner === true);
-        console.log("  - 두 이메일 비교:", loginEmail === viewedEmail);
-        console.log("========================================");
-        
-        // 디버깅 정보 업데이트
-        if (document.getElementById('debugIsOwnerType')) {
-          document.getElementById('debugIsOwnerType').textContent = typeof isOwner;
-        }
-        if (document.getElementById('debugIsOwnerNotNull')) {
-          document.getElementById('debugIsOwnerNotNull').textContent = (isOwner != null);
-        }
-        if (document.getElementById('debugIsOwnerTrue')) {
-          document.getElementById('debugIsOwnerTrue').textContent = (isOwner == true);
+        // 프로필 업로드 폼이 항상 표시되도록 보장
+        const uploadFormContainer = document.getElementById('uploadFormContainer');
+        if (uploadFormContainer) {
+          uploadFormContainer.style.display = 'block';
+          uploadFormContainer.style.visibility = 'visible';
+          uploadFormContainer.removeAttribute('hidden');
         }
         
-        // 보안 검증: isOwner가 false이면 프로필 업로드 폼과 삭제 버튼 강제로 숨김
-        if (isOwner !== true) {
-          console.log("🔒 [보안] isOwner가 false이므로 프로필 업로드 폼과 삭제 버튼을 숨깁니다.");
-          console.log("  - isOwner 값:", isOwner);
-          console.log("  - isOwner 타입:", typeof isOwner);
-          console.log("  - isOwner !== true:", isOwner !== true);
-          
-          // 프로필 업로드 폼 숨기기 (여러 방법으로 시도)
-          const uploadFormContainer = document.getElementById('uploadFormContainer');
-          if (uploadFormContainer) {
-            uploadFormContainer.style.display = 'none';
-            console.log("✅ 프로필 업로드 폼 컨테이너 숨김 완료");
-          }
-          
-          const uploadForm = document.getElementById('profileUploadForm');
-          if (uploadForm) {
-            uploadForm.style.display = 'none';
-            console.log("✅ 프로필 업로드 폼 숨김 완료");
-          }
-          
-          // 다른 방법으로도 찾기
-          const uploadForms = document.querySelectorAll('form[action*="/member/upload"]');
-          uploadForms.forEach(function(form) {
-            form.style.display = 'none';
-            if (form.parentElement) {
-              form.parentElement.style.display = 'none';
-            }
-            console.log("✅ 추가 프로필 업로드 폼 숨김 완료");
-          });
-          
-          // 모든 삭제 버튼 숨기기
-          const deleteButtons = document.querySelectorAll('.delete-button');
-          console.log("  - 발견된 삭제 버튼 개수:", deleteButtons.length);
-          deleteButtons.forEach(function(btn) {
-            btn.style.display = 'none';
-            btn.style.visibility = 'hidden';
-            btn.setAttribute('hidden', 'true');
-            console.log("✅ 삭제 버튼 숨김 완료:", btn);
-          });
-          
-          // th:block으로 감싸진 요소들도 숨기기
-          const thBlocks = document.querySelectorAll('th\\:block, [th\\:if]');
-          thBlocks.forEach(function(block) {
-            const text = block.textContent || '';
-            if (text.includes('Upload') || text.includes('X') || text.includes('프로필')) {
-              block.style.display = 'none';
-              console.log("✅ th:block 숨김 완료:", block);
-            }
-          });
-          
-          console.log("🔒 [보안] 모든 보안 조치 완료");
-        } else {
-          console.log("✅ isOwner가 true이므로 모든 기능이 활성화됩니다.");
-          
-          // isOwner가 true일 때는 삭제 버튼 표시
-          const deleteButtons = document.querySelectorAll('.delete-button');
-          deleteButtons.forEach(function(btn) {
-            btn.style.display = '';
-            btn.style.visibility = 'visible';
-            btn.removeAttribute('hidden');
-          });
-        }
-        
-        // 추가 보안: MutationObserver로 동적으로 추가되는 요소도 감시
-        if (isOwner !== true) {
-          const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-              mutation.addedNodes.forEach(function(node) {
-                if (node.nodeType === 1) { // Element node
-                  // 추가된 폼 숨기기
-                  if (node.tagName === 'FORM' && (node.action && node.action.includes('/member/upload'))) {
-                    node.style.display = 'none';
-                    if (node.parentElement) {
-                      node.parentElement.style.display = 'none';
-                    }
-                    console.log("🔒 [보안] 동적으로 추가된 프로필 업로드 폼 숨김");
-                  }
-                  // 추가된 삭제 버튼 숨기기
-                  if (node.classList && node.classList.contains('delete-button')) {
-                    node.style.display = 'none';
-                    console.log("🔒 [보안] 동적으로 추가된 삭제 버튼 숨김");
-                  }
-                  // 자식 요소들도 확인
-                  if (node.querySelectorAll) {
-                    const forms = node.querySelectorAll('form[action*="/member/upload"]');
-                    forms.forEach(function(form) {
-                      form.style.display = 'none';
-                      if (form.parentElement) {
-                        form.parentElement.style.display = 'none';
-                      }
-                      console.log("🔒 [보안] 자식 요소의 프로필 업로드 폼 숨김");
-                    });
-                    const deleteBtns = node.querySelectorAll('.delete-button');
-                    deleteBtns.forEach(function(btn) {
-                      btn.style.display = 'none';
-                      console.log("🔒 [보안] 자식 요소의 삭제 버튼 숨김");
-                    });
-                  }
-                }
-              });
-            });
-          });
-          
-          observer.observe(document.body, {
-            childList: true,
-            subtree: true
-          });
-          
-          console.log("✅ MutationObserver 설정 완료 - 동적 요소 감시 시작");
+        const uploadForm = document.getElementById('profileUploadForm');
+        if (uploadForm) {
+          uploadForm.style.display = 'block';
+          uploadForm.style.visibility = 'visible';
+          uploadForm.removeAttribute('hidden');
         }
       };
       
       function deletePost(element) {
-        const isOwner = /*[[${isOwner}]]*/ null;
-        const loginEmail = /*[[${loginEmail}]]*/ null;
-        const viewedEmail = /*[[${viewedEmail != null ? viewedEmail : (viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail)}]]*/ null;
-        
-        console.log("[DEBUG] deletePost 호출");
-        console.log("  - isOwner:", isOwner);
-        console.log("  - loginEmail:", loginEmail);
-        console.log("  - viewedEmail:", viewedEmail);
-        
-        // 보안 검증: isOwner가 true가 아니면 삭제 차단
-        if (isOwner !== true) {
-          alert("본인의 게시물만 삭제할 수 있습니다.");
-          console.error("❌ [보안] 삭제 시도 차단: isOwner가 true가 아닙니다. isOwner=" + isOwner);
-          return;
-        }
-        
         const postId = element.getAttribute("data-post-id");
         if (confirm("게시물을 삭제하시겠습니까?")) {
           fetch(`/member/delete?id=${encodeURIComponent(postId)}`, {
@@ -606,45 +498,6 @@
         }
       }
       
-      // 프로필 업로드 폼 제출 시 보안 검증 (즉시 실행 및 DOMContentLoaded)
-      (function() {
-        const isOwner = /*[[${isOwner}]]*/ null;
-        
-        function attachSecurityCheck() {
-          const uploadForms = document.querySelectorAll('form[action*="/member/upload"], form#profileUploadForm');
-          uploadForms.forEach(function(uploadForm) {
-            // 기존 리스너 제거 후 새로 추가
-            const newForm = uploadForm.cloneNode(true);
-            uploadForm.parentNode.replaceChild(newForm, uploadForm);
-            
-            newForm.addEventListener('submit', function(event) {
-              const currentIsOwner = /*[[${isOwner}]]*/ null;
-              console.log("[보안] 프로필 업로드 폼 제출 시도, isOwner:", currentIsOwner);
-              if (currentIsOwner !== true) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                alert("본인의 프로필만 수정할 수 있습니다.");
-                console.error("❌ [보안] 프로필 업로드 차단: isOwner가 true가 아닙니다. isOwner=" + currentIsOwner);
-                return false;
-              }
-            }, true); // capture phase에서 실행
-          });
-        }
-        
-        // 즉시 실행
-        attachSecurityCheck();
-        
-        // DOMContentLoaded에서도 실행
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', attachSecurityCheck);
-        } else {
-          attachSecurityCheck();
-        }
-        
-        // window.onload에서도 실행
-        window.addEventListener('load', attachSecurityCheck);
-      })();
     </script>
   </body>
 </html>

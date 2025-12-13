@@ -41,12 +41,21 @@ public class PostResponseDTO {
 
         // 게시글 이미지 (/posts/**로 접근)
         if (post.getImgsource() != null && !post.getImgsource().isEmpty()) {
-            try {
-                String filename = Paths.get(post.getImgsource()).getFileName().toString();
-                String email = post.getMemberEmail();
-                this.imgsource = "/posts/" + email + "/" + filename; // 게시물 이미지 URL
-            } catch (Exception e) {
-                this.imgsource = "/posts/default-image.png";
+            String imgsource = post.getImgsource();
+            // 이미 /posts/로 시작하는 경우 그대로 사용
+            if (imgsource.startsWith("/posts/")) {
+                this.imgsource = imgsource;
+            } else {
+                // DB에 저장된 경로가 상대 경로인 경우 처리
+                try {
+                    // 파일명 추출 (경로에서 마지막 부분)
+                    String filename = Paths.get(imgsource).getFileName().toString();
+                    String email = post.getMemberEmail();
+                    this.imgsource = "/posts/" + email + "/" + filename; // 게시물 이미지 URL
+                } catch (Exception e) {
+                    // 파싱 실패 시 원본 경로 사용 또는 기본값
+                    this.imgsource = imgsource.startsWith("/") ? imgsource : "/posts/" + imgsource;
+                }
             }
         }
 

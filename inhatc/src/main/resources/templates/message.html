@@ -467,7 +467,8 @@
         <img
           src="/images/alram.png"
           alt="Alarm"
-          onclick="location.href='/posts/check';"
+          onclick="location.href='/posts/notifications/page';"
+          id="notificationIcon"
         />
 
         <!-- 로그아웃 -->
@@ -514,7 +515,7 @@
             <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
               <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
               <button class="image-upload-button" onclick="document.getElementById('imageInput').click()">
-                📷 이미지
+                 이미지 업로드
               </button>
               <textarea
                 id="messageInput"
@@ -538,28 +539,28 @@
       let roomName = '';
 
       // 디버깅 정보 출력
-      console.log("========================================");
-      console.log("[DEBUG] message.html 스크립트 로드됨");
-      console.log("  - senderEmail (Thymeleaf):", senderEmail);
-      console.log("  - receiverEmail (Thymeleaf):", receiverEmail);
-      console.log("  - isChatMode:", isChatMode);
-      console.log("  - senderEmail 타입:", typeof senderEmail);
-      console.log("  - receiverEmail 타입:", typeof receiverEmail);
-      console.log("========================================");
+      // console.log("========================================");
+      // console.log("[DEBUG] message.html 스크립트 로드됨");
+      // console.log("  - senderEmail (Thymeleaf):", senderEmail);
+      // console.log("  - receiverEmail (Thymeleaf):", receiverEmail);
+      // console.log("  - isChatMode:", isChatMode);
+      // console.log("  - senderEmail 타입:", typeof senderEmail);
+      // console.log("  - receiverEmail 타입:", typeof receiverEmail);
+      // console.log("========================================");
 
       // 디버깅 정보를 화면에 표시
-      window.addEventListener('DOMContentLoaded', function() {
-        const debugInfo = document.createElement('div');
-        debugInfo.id = 'debugInfo';
-        debugInfo.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f7f9f9; padding: 12px; border-radius: 8px; font-size: 12px; z-index: 1000; max-width: 300px; border: 1px solid #eff3f4;';
-        debugInfo.innerHTML = `
-          <strong>🔍 디버깅 정보</strong><br/>
-          senderEmail: ${senderEmail || '(없음)'}<br/>
-          receiverEmail: ${receiverEmail || '(없음)'}<br/>
-          <button onclick="this.parentElement.style.display='none'" style="margin-top: 8px; padding: 4px 8px; font-size: 11px;">닫기</button>
-        `;
-        document.body.appendChild(debugInfo);
-      });
+      // window.addEventListener('DOMContentLoaded', function() {
+      //   const debugInfo = document.createElement('div');
+      //   debugInfo.id = 'debugInfo';
+      //   debugInfo.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f7f9f9; padding: 12px; border-radius: 8px; font-size: 12px; z-index: 1000; max-width: 300px; border: 1px solid #eff3f4;';
+      //   debugInfo.innerHTML = `
+      //     <strong>🔍 디버깅 정보</strong><br/>
+      //     senderEmail: ${senderEmail || '(없음)'}<br/>
+      //     receiverEmail: ${receiverEmail || '(없음)'}<br/>
+      //     <button onclick="this.parentElement.style.display='none'" style="margin-top: 8px; padding: 4px 8px; font-size: 11px;">닫기</button>
+      //   `;
+      //   document.body.appendChild(debugInfo);
+      // });
 
       function getNormalizedRoomName(user1, user2) {
         return user1 < user2 ? user1 + '_' + user2 : user2 + '_' + user1;
@@ -576,7 +577,7 @@
         console.log("  - receiverEmail:", currentReceiverEmail);
         
         if (!currentSenderEmail || !currentReceiverEmail) {
-          console.error("❌ 사용자 정보가 없어 연결할 수 없음");
+          console.error("사용자 정보가 없어 연결할 수 없음");
           return;
         }
         
@@ -614,14 +615,14 @@
         console.log("  - receiverEmail:", currentReceiverEmail);
         
         if (!currentSenderEmail || currentSenderEmail.trim() === '') {
-          console.error("❌ senderEmail이 비어있음");
+          console.error("senderEmail이 비어있음");
           document.getElementById('chatMessages').innerHTML = 
             '<div class="loading" style="color: #f4212e;">오류: 발신자 이메일을 불러올 수 없습니다.</div>';
           return;
         }
         
         if (!currentReceiverEmail || currentReceiverEmail.trim() === '') {
-          console.error("❌ receiverEmail이 비어있음");
+          console.error("receiverEmail이 비어있음");
           document.getElementById('chatMessages').innerHTML = 
             '<div class="loading" style="color: #f4212e;">오류: 수신자 이메일을 불러올 수 없습니다.</div>';
           return;
@@ -641,7 +642,7 @@
             return response.json();
           })
           .then(messages => {
-            console.log("  ✅ 메시지 히스토리 로드 성공:", messages);
+            console.log("  메시지 히스토리 로드 성공:", messages);
             console.log("  - 메시지 개수:", messages ? messages.length : 0);
             
             const messagesContainer = document.getElementById('chatMessages');
@@ -657,7 +658,7 @@
             }
           })
           .catch(error => {
-            console.error('❌ 메시지 히스토리 로드 오류:', error);
+            console.error('메시지 히스토리 로드 오류:', error);
             console.error('  - 에러 메시지:', error.message);
             console.error('  - 에러 스택:', error.stack);
             document.getElementById('chatMessages').innerHTML = 

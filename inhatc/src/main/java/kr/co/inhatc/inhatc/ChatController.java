@@ -10,18 +10,20 @@ import jakarta.servlet.http.HttpSession;
 import kr.co.inhatc.inhatc.service.MemberService;
 import kr.co.inhatc.inhatc.dto.MemberDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/chat")
 @RequiredArgsConstructor
+@Slf4j
 public class ChatController {
 
     private final MemberService memberService;
 
     /**
      * 메시지 페이지
-     * - receiverEmail이 없으면: 세션 유저의 message_entity를 조회하여 대화 상대 목록 표시 (목록 모드)
-     * - receiverEmail이 있으면: 세션 유저(senderEmail)와 receiverEmail 간의 채팅 화면 표시 (채팅 모드)
+     * - receiverEmail이 없으면: 세션 유저의 message_entity를 조회하여 대화 상대 목록 표시 목록 모드
+     * - receiverEmail이 있으면: 세션 유저(senderEmail)와 receiverEmail 간의 채팅 화면 표시 채팅 모드
      * 
      * @param receiverEmail 수신자 이메일 (선택적, 없으면 목록 모드)
      * @param session HTTP 세션 (세션에서 loginEmail을 가져와 senderEmail로 사용)
@@ -33,16 +35,13 @@ public class ChatController {
             @RequestParam(value = "receiverEmail", required = false) String receiverEmail,
             HttpSession session,
             Model model) {
-        System.out.println("========================================");
-        System.out.println("[DEBUG] ChatController.chatPage 호출됨");
-        System.out.println("  - receiverEmail 파라미터: " + receiverEmail);
+        log.debug("채팅 페이지 요청: receiverEmail={}", receiverEmail);
         
         // 세션에서 로그인한 유저의 이메일을 가져옴 (이것이 senderEmail이 됨)
         String loginEmail = (String) session.getAttribute("loginEmail");
-        System.out.println("  - 세션 loginEmail (senderEmail): " + loginEmail);
         
         if (loginEmail == null) {
-            System.out.println("  ❌ 세션에 loginEmail이 없음 - 로그인 페이지로 리다이렉트");
+            log.warn("채팅 페이지 접근 실패: 세션에 loginEmail이 없음");
             return "redirect:/";
         }
 
@@ -51,9 +50,7 @@ public class ChatController {
         
         // receiverEmail이 있으면 채팅 모드, 없으면 목록 모드
         if (receiverEmail != null && !receiverEmail.trim().isEmpty()) {
-            System.out.println("  ✅ 채팅 모드");
-            System.out.println("    - senderEmail (세션 유저): " + loginEmail);
-            System.out.println("    - receiverEmail (상대방): " + receiverEmail);
+            log.debug("채팅 모드: sender={}, receiver={}", loginEmail, receiverEmail);
             model.addAttribute("receiverEmail", receiverEmail);
             model.addAttribute("isChatMode", true);
             
@@ -61,20 +58,15 @@ public class ChatController {
             try {
                 MemberDTO receiver = memberService.getMemberByEmail(receiverEmail);
                 model.addAttribute("receiverName", receiver.getMemberName());
-                System.out.println("  ✅ 수신자 이름: " + receiver.getMemberName());
             } catch (Exception e) {
-                System.err.println("  ⚠️ 수신자 정보 조회 실패: " + e.getMessage());
+                log.warn("수신자 정보 조회 실패: receiverEmail={}", receiverEmail, e);
                 model.addAttribute("receiverName", receiverEmail);
             }
         } else {
-            System.out.println("  ✅ 목록 모드 - 세션 유저의 message_entity를 조회하여 대화 상대 목록 표시");
-            System.out.println("    - senderEmail (세션 유저): " + loginEmail);
+            log.debug("목록 모드: sender={}", loginEmail);
             model.addAttribute("isChatMode", false);
             // 대화 상대 목록은 JavaScript에서 /api/messages/conversations?userEmail={senderEmail} API로 가져옴
         }
-        
-        System.out.println("  ✅ 모델에 속성 추가 완료");
-        System.out.println("========================================");
         
         return "message";
     }

@@ -11,8 +11,13 @@ import kr.co.inhatc.inhatc.entity.MemberEntity; // MemberEntity 클래스를 임
 @Repository
 public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
 
+    // ✅ 안전: JPA 메서드 이름 기반 쿼리 (SQL Injection 위험 없음)
     Optional<MemberEntity> findByMemberEmail(String memberEmail);
 
+    // ✅ 안전: JPA 메서드 이름 기반 쿼리 (SQL Injection 위험 없음)
     List<MemberEntity> findByMemberName(String memberName);
+
+    // ✅ N+1 문제 해결: 여러 이메일의 회원을 한 번에 조회
+    List<MemberEntity> findByMemberEmailIn(List<String> memberEmails);
 
 }

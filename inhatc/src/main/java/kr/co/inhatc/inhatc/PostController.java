@@ -4,8 +4,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,13 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
+import kr.co.inhatc.inhatc.exception.CustomException;
+import kr.co.inhatc.inhatc.exception.ErrorCode;
 import kr.co.inhatc.inhatc.service.PostService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
+@Slf4j
+@Validated
 public class PostController {
     private final PostService postService;
 
@@ -42,11 +53,18 @@ public class PostController {
         return ResponseEntity.ok(postService.findByMemberName(memberName));
     }
 
-    // 전체 게시글 조회 (삭제되지 않은 것만)
+    /**
+     * 전체 게시글 조회 (삭제되지 않은 것만, 페이징 지원)
+     * 사용 예시:
+     * - GET /api/posts?page=0&size=20 (첫 페이지, 20개씩)
+     * - GET /api/posts?page=1&size=10&sort=createdDate,desc (두 번째 페이지, 10개씩, 최신순)
+     */
     @GetMapping
-    public ResponseEntity<List<PostResponseDTO>> getAllPosts() {
-        List<PostResponseDTO> posts = postService.findAll();
-        System.out.println("DTO 수: " + posts.size());
+    public ResponseEntity<Page<PostResponseDTO>> getAllPosts(
+            @PageableDefault(size = 20, sort = "createdDate", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        Page<PostResponseDTO> posts = postService.findAll(pageable);
+        log.debug("전체 게시글 조회: {}개 (페이지: {}, 크기: {})", 
+                posts.getTotalElements(), posts.getNumber(), posts.getSize());
         return ResponseEntity.ok(posts);
     }
 
@@ -80,7 +98,7 @@ public class PostController {
     @PostMapping("/{postId}/likes")
     public ResponseEntity<Map<String, Object>> toggleLove(
             @PathVariable Long postId,
-            @RequestParam String email) {
+            @RequestParam @NotBlank(message = "이메일은 필수입니다.") String email) {
 
         boolean liked = postService.toggleLove(postId, email);
         Map<String, Object> response = new HashMap<>();
@@ -95,7 +113,8 @@ public class PostController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam("content") String content,
+            @RequestParam("content") @NotBlank(message = "게시글 내용은 필수입니다.") 
+            @Size(max = 2000, message = "게시글 내용은 2000자 이하여야 합니다.") String content,
             HttpSession session) {
 
         String email = (String) session.getAttribute("loginEmail");
@@ -111,11 +130,16 @@ public class PostController {
             // 게시글 저장 (DB에는 URL 저장)
             postService.savePost(email, content, fileUrl);
 
-            return ResponseEntity.ok("게시물 업로드 성공");
+            log.info(kr.co.inhatc.inhatc.constants.AppConstants.LogMessage.POST_UPLOAD_SUCCESS + ": 사용자={}, 파일={}", 
+                    email, file != null ? file.getOriginalFilename() : "없음");
+            return ResponseEntity.ok(kr.co.inhatc.inhatc.constants.AppConstants.SuccessMessage.POST_UPLOAD_SUCCESS);
+        } catch (IllegalArgumentException e) {
+            log.warn(kr.co.inhatc.inhatc.constants.AppConstants.LogMessage.POST_UPLOAD_FAILED, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(String.format(kr.co.inhatc.inhatc.constants.AppConstants.ErrorMessage.POST_UPLOAD_FAILED, e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("게시물 업로드 실패: " + e.getMessage());
+            log.error("게시물 업로드 중 예외 발생: 사용자={}", email, e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 

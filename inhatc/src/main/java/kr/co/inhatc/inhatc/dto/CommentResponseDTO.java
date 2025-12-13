@@ -17,11 +17,13 @@ public class CommentResponseDTO {
     private String writerName;
     private String writerProfile; // 작성자 프로필 이미지 경로
     private LocalDateTime createdDate; // 생성일
+    private Long parentCommentId; // 부모 댓글 ID (대댓글인 경우)
+    private java.util.List<CommentResponseDTO> replies; // 답글 목록
 
     @Builder
     public CommentResponseDTO(Long id, Long post, String comment, String writer, String writerProfile,
     String writerName,
-                              LocalDateTime createdDate) {
+                              LocalDateTime createdDate, Long parentCommentId, java.util.List<CommentResponseDTO> replies) {
         this.id = id;
         this.post = post;
         this.comment = comment;
@@ -29,12 +31,16 @@ public class CommentResponseDTO {
         this.writerName = writerName;
         this.writerProfile = writerProfile;
         this.createdDate = createdDate;
+        this.parentCommentId = parentCommentId;
+        this.replies = replies != null ? replies : new java.util.ArrayList<>();
     }
 
     public CommentResponseDTO(CommentEntity commentEntity) {
         this.id = commentEntity.getId();
         this.post = commentEntity.getPost().getId();
         this.comment = commentEntity.getComment();
+        this.parentCommentId = commentEntity.getParentComment() != null ? commentEntity.getParentComment().getId() : null;
+        this.replies = new java.util.ArrayList<>();
 
         if (commentEntity.getWriter() != null) {
             this.writer = commentEntity.getWriter().getMemberEmail();

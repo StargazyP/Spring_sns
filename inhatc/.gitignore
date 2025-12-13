@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# User-uploaded media (profile & post images)
+src/main/resources/**/*@*
+src/main/resources/**/*@*/**
+src/main/resources/static/**/messages/**
+
+# 프로덕션 설정 파일 (민감한 정보 포함)
+src/main/resources/application-prod.properties

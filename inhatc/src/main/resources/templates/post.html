@@ -1,0 +1,2362 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>게시물 상세</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #0f1419;
+        line-height: 1.5;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+      }
+
+      .wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        min-height: 100vh;
+        border-left: 1px solid #eff3f4;
+        border-right: 1px solid #eff3f4;
+      }
+
+      /* X 스타일 네비게이션 바 */
+      .navbar {
+        position: sticky;
+        top: 0;
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #eff3f4;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        min-height: 64px;
+      }
+
+      .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .back-button {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        color: #0f1419;
+      }
+
+      .back-button:hover {
+        background-color: #f7f9f9;
+      }
+
+      .navbar-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f1419;
+      }
+
+      .navbar img {
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        object-fit: contain;
+      }
+
+      .navbar img:hover {
+        background-color: #f7f9f9;
+      }
+
+      .navbar img[src="/images/home.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      .navbar img[src="/images/user.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      .navbar img[src="/Message.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      .navbar img[src="/images/alram.png"] {
+        width: 61px;
+        height: 52px;
+      }
+
+      .navbar img[src="/images/logout.png"] {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* 게시물 상세 컨테이너 */
+      .post-container {
+        padding: 16px;
+        border-bottom: 1px solid #eff3f4;
+      }
+
+      .post-header {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .profile-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+
+      .post-header-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .post-author {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f1419;
+        text-decoration: none;
+        margin-bottom: 4px;
+        display: block;
+      }
+
+      .post-author:hover {
+        text-decoration: underline;
+      }
+
+      .post-date {
+        font-size: 15px;
+        color: #536471;
+      }
+
+      .post-content {
+        font-size: 15px;
+        color: #0f1419;
+        margin: 12px 0;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+
+      .post-image {
+        width: 100%;
+        border-radius: 16px;
+        margin: 12px 0;
+        object-fit: cover;
+      }
+
+      .post-stats {
+        color: #536471;
+        font-size: 15px;
+        margin-top: 12px;
+      }
+
+      .post-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #eff3f4;
+      }
+
+      .action-button {
+        background-color: transparent;
+        color: #536471;
+        border: 1px solid #eff3f4;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .action-button:hover {
+        background-color: #f7f9f9;
+      }
+
+      .action-button.liked {
+        color: #f4212e;
+        border-color: #f4212e;
+      }
+
+      .delete-button {
+        background-color: #f4212e;
+        color: #ffffff;
+        border: none;
+      }
+
+      .delete-button:hover {
+        background-color: #d91e2e;
+      }
+
+      /* 댓글 섹션 */
+      .comment-section {
+        padding: 16px;
+        border-top: 1px solid #eff3f4;
+      }
+
+      .comment-section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f1419;
+        margin-bottom: 16px;
+      }
+
+      .comments {
+        margin-bottom: 16px;
+      }
+
+      .comment {
+        padding: 12px 0;
+        border-bottom: 1px solid #eff3f4;
+        display: flex;
+        gap: 12px;
+      }
+
+      .comment:last-child {
+        border-bottom: none;
+      }
+
+      /* 스레드 구조 */
+      .comment-thread {
+        position: relative;
+        padding-left: 0;
+      }
+
+      /* 스레드 연결선 */
+      .comment-thread::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: -12px;
+        width: 2px;
+        background-color: #eff3f4;
+      }
+
+      .comment-thread:last-child::before {
+        display: none;
+      }
+
+      /* 답글 클릭 가능 스타일 */
+      .clickable-reply {
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .clickable-reply:hover {
+        background-color: #f7f9f9;
+      }
+
+      /* 메인 답글 뷰 */
+      .comment-main-view {
+        padding: 16px;
+      }
+
+      /* 원문 메인 표시 */
+      .reply-original-main {
+        position: relative;
+      }
+
+      /* 답글 원문 표시 영역 */
+      .reply-original {
+        margin-bottom: 12px;
+        padding: 12px;
+        background-color: #f7f9f9;
+        border-radius: 12px;
+        border-left: 3px solid #1d9bf0;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .reply-original:hover {
+        background-color: #eff3f4;
+      }
+
+      .reply-original-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: #536471;
+      }
+
+      .reply-original-author {
+        font-weight: 600;
+        color: #0f1419;
+      }
+
+      .reply-original-text {
+        font-size: 14px;
+        color: #0f1419;
+        line-height: 1.4;
+      }
+
+      /* 답글 아이콘 */
+      .reply-icon {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        color: #536471;
+        transition: color 0.2s;
+      }
+
+      .reply-icon:hover {
+        color: #1d9bf0;
+      }
+
+
+      .comment.clickable {
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .comment.clickable:hover {
+        background-color: #f7f9f9;
+      }
+
+      .comment.highlight {
+        background-color: #e8f5e9;
+        animation: highlightFade 2s ease-out;
+      }
+
+      @keyframes highlightFade {
+        0% {
+          background-color: #c8e6c9;
+        }
+        100% {
+          background-color: transparent;
+        }
+      }
+
+      /* 댓글 메인 뷰 */
+      .comment-main-view {
+        background-color: #f7f9f9;
+        border: 2px solid #1d9bf0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        position: relative;
+      }
+
+      .comment-main-view::before {
+        content: '메인 댓글';
+        position: absolute;
+        top: -12px;
+        left: 16px;
+        background-color: #1d9bf0;
+        color: #ffffff;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .comment .profile-img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .comment-content {
+        flex: 1;
+      }
+
+      .comment-author {
+        font-weight: 700;
+        color: #0f1419;
+        margin-bottom: 4px;
+      }
+
+      .comment-text {
+        font-size: 15px;
+        color: #0f1419;
+        margin: 0;
+      }
+
+      .comment-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .reply-button {
+        background-color: transparent;
+        border: none;
+        color: #536471;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .reply-button:hover {
+        background-color: #f7f9f9;
+        color: #0f1419;
+      }
+
+      .reply-text-button {
+        background-color: transparent;
+        border: none;
+        color: #536471;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px 12px;
+        border-radius: 20px;
+        transition: all 0.2s;
+        font-weight: 500;
+      }
+
+      .reply-text-button:hover {
+        background-color: #f7f9f9;
+        color: #0f1419;
+      }
+
+      /* 답글 보기 버튼 */
+      .view-replies-button {
+        background-color: transparent;
+        border: none;
+        color: #1d9bf0;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .view-replies-button:hover {
+        background-color: #e0f2ff;
+      }
+
+      /* Thread View 버튼 */
+      .thread-view-button {
+        background-color: transparent;
+        border: none;
+        color: #1d9bf0;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .thread-view-button:hover {
+        background-color: #e0f2ff;
+      }
+
+      /* 답글 들여쓰기 */
+      .comment-reply {
+        border-left: 2px solid #eff3f4;
+        padding-left: 12px;
+        margin-top: 8px;
+      }
+
+      /* 답글 컨테이너 */
+      .comment-replies-container {
+        margin-top: 8px;
+      }
+
+      /* 스레드 형식 답글 */
+      .comment-thread {
+        position: relative;
+        margin-top: 12px;
+        margin-left: 0;
+        padding-left: 0;
+        width: 100%;
+      }
+
+      .comment-thread::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #eff3f4;
+        z-index: 0;
+      }
+
+      .comment-reply {
+        position: relative;
+        margin-top: 12px;
+        margin-left: 0;
+        padding-left: 0;
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eff3f4;
+        width: 100%;
+      }
+
+      .comment-reply:last-child {
+        border-bottom: none;
+      }
+
+      .comment-reply .profile-img {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+      }
+
+      .comment-reply::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 20px;
+        width: 20px;
+        height: 2px;
+        background-color: #eff3f4;
+        z-index: 1;
+      }
+
+      /* 긴 댓글 더보기 버튼 */
+      .expand-comment-button {
+        background-color: transparent;
+        border: none;
+        color: #1d9bf0;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 4px;
+        text-decoration: none;
+      }
+
+      .expand-comment-button:hover {
+        text-decoration: underline;
+      }
+
+      /* Thread View */
+      .thread-view {
+        padding: 16px;
+      }
+
+      .thread-back-button {
+        background-color: #f7f9f9;
+        border: 1px solid #eff3f4;
+        color: #0f1419;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        transition: background-color 0.2s;
+      }
+
+      .thread-back-button:hover {
+        background-color: #eff3f4;
+      }
+
+      /* 클릭 가능한 댓글 */
+      .clickable-comment {
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .clickable-comment:hover {
+        background-color: #f7f9f9;
+      }
+
+      .reply-form {
+        margin-top: 12px;
+        padding: 12px;
+        background-color: #f7f9f9;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .reply-form.active {
+        display: block;
+      }
+
+      .reply-textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #eff3f4;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        min-height: 60px;
+        margin-bottom: 8px;
+      }
+
+      .reply-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .reply-submit-button,
+      .reply-cancel-button {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: background-color 0.2s;
+      }
+
+      .reply-submit-button {
+        background-color: #0f1419;
+        color: #ffffff;
+      }
+
+      .reply-submit-button:hover {
+        background-color: #272c30;
+      }
+
+      .reply-cancel-button {
+        background-color: transparent;
+        color: #536471;
+      }
+
+      .reply-cancel-button:hover {
+        background-color: #eff3f4;
+      }
+
+      .comment-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .comment-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #eff3f4;
+        border-radius: 8px;
+        font-size: 15px;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        min-height: 80px;
+      }
+
+      .comment-textarea:focus {
+        border-color: #1d9bf0;
+      }
+
+      .comment-submit-button {
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 24px;
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        align-self: flex-end;
+      }
+
+      .comment-submit-button:hover {
+        background-color: #272c30;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 60px 20px;
+        color: #536471;
+        font-size: 15px;
+      }
+
+      .error {
+        text-align: center;
+        padding: 60px 20px;
+        color: #f4212e;
+        font-size: 15px;
+      }
+
+      /* 반응형 디자인 */
+      @media (max-width: 768px) {
+        .wrapper {
+          max-width: 100%;
+          border-left: none;
+          border-right: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Navigation Bar -->
+      <div class="navbar">
+        <div class="navbar-left">
+          <button class="back-button" onclick="goBack()">←</button>
+          <div class="navbar-title">게시물</div>
+        </div>
+        <div style="display: flex; gap: 20px;">
+          <img
+            src="/images/home.png"
+            alt="home"
+            onclick="location.href='/main';"
+          />
+          <img
+            src="/images/user.png"
+            alt="User"
+            onclick="location.href='/member/mypage';"
+          />
+          <img
+            src="/Message.png"
+            alt="Message"
+            onclick="location.href='/chat/message';"
+          />
+          <img
+            src="/images/alram.png"
+            alt="Alarm"
+            onclick="location.href='/main';"
+          />
+          <img
+            src="/images/logout.png"
+            alt="Logout"
+            onclick="document.getElementById('logout').submit();"
+          />
+          <form id="logout" action="/api/members/logout" method="post"></form>
+        </div>
+      </div>
+
+      <!-- 게시물 상세 영역 -->
+      <div id="postContainer" class="post-container">
+        <div class="loading">게시물을 불러오는 중...</div>
+      </div>
+
+      <!-- 댓글 섹션 -->
+      <div class="comment-section">
+        <div class="comment-section-title">댓글</div>
+        <div id="comments" class="comments">
+          <!-- 댓글이 여기에 동적으로 추가됩니다 -->
+        </div>
+        <div class="comment-form">
+          <textarea
+            id="commentContent"
+            class="comment-textarea"
+            placeholder="댓글을 입력하세요"
+          ></textarea>
+          <button class="comment-submit-button" onclick="submitComment()">댓글 등록</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      let currentPostId = null;
+      let currentPost = null;
+
+      // 페이지 로드 시 게시물 정보 가져오기
+      window.onload = async function () {
+        const postId = getPostIdFromUrl();
+        if (!postId) {
+          showError("게시물 ID를 찾을 수 없습니다.");
+          return;
+        }
+
+        currentPostId = postId;
+        await loadPost(postId);
+        await loadComments(postId, 0, false);
+      };
+
+      // URL에서 게시물 ID 추출
+      function getPostIdFromUrl() {
+        const pathParts = window.location.pathname.split("/");
+        console.log(pathParts[pathParts.length - 1]);
+        return pathParts[pathParts.length - 1];
+      }
+
+      // 뒤로 가기
+      function goBack() {
+        window.history.back();
+      }
+
+      // 게시물 로드
+      async function loadPost(postId) {
+        try {
+          const response = await fetch(`/api/posts/${postId}`);
+          
+          if (!response.ok) {
+            if (response.status === 404) {
+              showError("게시물을 찾을 수 없습니다.");
+            } else {
+              showError("게시물을 불러오는 중 오류가 발생했습니다.");
+            }
+            return;
+          }
+
+          const post = await response.json();
+          currentPost = post;
+          renderPost(post);
+        } catch (error) {
+          console.error("게시물 로드 오류:", error);
+          showError("게시물을 불러오는 중 오류가 발생했습니다.");
+        }
+      }
+
+      // 게시물 렌더링
+      async function renderPost(post) {
+        const container = document.getElementById("postContainer");
+        
+        const memberEmail = await getMemberEmail();
+        const isOwner = memberEmail && post.writerEmail === memberEmail;
+
+        const postHtml = `
+          <div class="post-header">
+            <img 
+              src="${post.profilePicturePath || '/images/default-profile.png'}" 
+              class="profile-img"
+              onerror="this.src='/images/default-profile.png';"
+            />
+            <div class="post-header-info">
+              <a href="/member/profile/${encodeURIComponent(post.writerEmail)}" class="post-author">
+                ${post.writerName || "(이름 없음)"}
+              </a>
+              <div class="post-date">${new Date(post.createdDate).toLocaleString("ko-KR")}</div>
+            </div>
+          </div>
+          <div class="post-content">${post.content || ""}</div>
+          ${post.imgsource ? `<img src="${post.imgsource}" class="post-image" onerror="this.style.display='none';">` : ""}
+          <div class="post-stats">조회수: ${post.hits || 0}</div>
+          <div class="post-actions">
+            <button class="action-button" id="likeButton" onclick="toggleLike()">
+              ❤️ ${post.love || 0}
+            </button>
+            ${isOwner ? `<button class="action-button delete-button" onclick="deletePost()">삭제</button>` : ""}
+          </div>
+        `;
+
+        container.innerHTML = postHtml;
+
+        // 좋아요 상태 확인 및 업데이트
+        if (memberEmail) {
+          checkLikeStatus(post.id, memberEmail);
+        }
+      }
+
+      // 에러 표시
+      function showError(message) {
+        const container = document.getElementById("postContainer");
+        container.innerHTML = `<div class="error">${message}</div>`;
+      }
+
+      // 로그인된 사용자 이메일 가져오기
+      async function getMemberEmail() {
+        try {
+          const response = await fetch("/api/members/session", {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const data = await response.json();
+          return data.loginEmail || null;
+        } catch (error) {
+          console.error("세션 정보 가져오기 오류:", error);
+          return null;
+        }
+      }
+
+      // 좋아요 상태 확인
+      async function checkLikeStatus(postId, email) {
+        // 좋아요 상태를 확인하는 API가 있다면 사용
+        // 현재는 기본 상태로 표시
+      }
+
+      // 좋아요 토글
+      async function toggleLike() {
+        const userEmail = await getMemberEmail();
+        if (!userEmail) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+
+        const button = document.getElementById("likeButton");
+        const currentText = button.textContent;
+        const currentCount = parseInt(currentText.match(/\d+/)?.[0] || "0");
+
+        try {
+          const response = await fetch(
+            `/api/posts/${currentPostId}/likes?email=${encodeURIComponent(userEmail)}`,
+            { method: "POST" }
+          );
+
+          if (!response.ok) {
+            throw new Error("좋아요 처리 실패");
+          }
+
+          const data = await response.json();
+          
+          if (data.liked) {
+            button.textContent = `❤️ ${currentCount + 1}`;
+            button.classList.add("liked");
+          } else {
+            button.textContent = `❤️ ${currentCount - 1}`;
+            button.classList.remove("liked");
+          }
+        } catch (error) {
+          console.error("좋아요 오류:", error);
+          alert("좋아요 처리 중 오류가 발생했습니다.");
+        }
+      }
+
+      // 게시물 삭제
+      async function deletePost() {
+        if (!confirm("게시물을 삭제하시겠습니까?")) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/posts/${currentPostId}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) {
+            throw new Error("게시물 삭제 실패");
+          }
+
+          alert("게시물이 삭제되었습니다.");
+          window.location.href = "/main";
+        } catch (error) {
+          console.error("삭제 오류:", error);
+          alert("게시물 삭제 중 오류가 발생했습니다.");
+        }
+      }
+
+      // =====================================================
+      // 댓글 시스템 (새로운 구조)
+      // =====================================================
+      
+      // 댓글 로드 (무한 스크롤 지원)
+      let currentPage = 0;
+      let isLoadingComments = false;
+      let hasMoreComments = true;
+      let currentThreadCommentId = null; // Thread View에서 보는 댓글 ID
+      const pageSize = 20;
+
+      async function loadComments(postId, page = 0, isThreadView = false) {
+        if (isLoadingComments) return;
+        
+        try {
+          isLoadingComments = true;
+          
+          // 기본 화면에서는 all=true로 전체 댓글을 가져와서 replies 포함
+          // Thread View가 아닐 때는 all=true 사용
+          let response;
+          if (!isThreadView) {
+            // 전체 댓글을 가져와서 replies 포함
+            response = await fetch(`/api/posts/${postId}/comments?all=true`);
+          } else {
+            // Thread View일 때는 페이징 사용
+            response = await fetch(`/api/posts/${postId}/comments?page=${page}&size=${pageSize}&sort=createDate,desc`);
+          }
+          
+          if (!response.ok) {
+            console.error("댓글 로드 실패");
+            return;
+          }
+
+          const responseData = await response.json();
+          let comments;
+          let totalPages = 1;
+          
+          if (isThreadView) {
+            comments = Array.isArray(responseData) ? responseData : (responseData.content || []);
+            totalPages = responseData.totalPages || 1;
+            hasMoreComments = page < totalPages - 1;
+            currentPage = page;
+          } else {
+            // all=true일 때는 배열로 반환
+            comments = Array.isArray(responseData) ? responseData : [];
+            // 부모 댓글만 필터링 (parentCommentId가 null인 것들)
+            comments = comments.filter(comment => !comment.parentCommentId);
+            hasMoreComments = false; // 전체 로드이므로 더 이상 없음
+            currentPage = 0;
+          }
+          
+          // Thread View인 경우
+          if (isThreadView && currentThreadCommentId) {
+            showThreadView(currentThreadCommentId, comments);
+            return;
+          }
+          
+          // 기본 화면: 댓글만 표시 (대댓글은 숨김)
+          const container = document.getElementById("comments");
+          if (!container) return;
+          
+          if (page === 0 || !isThreadView) {
+            container.innerHTML = "";
+          }
+          
+          if (!comments || comments.length === 0) {
+            if (container.children.length === 0) {
+              container.innerHTML = "<div style='text-align: center; padding: 20px; color: #536471;'>댓글이 없습니다.</div>";
+            }
+            return;
+          }
+          
+          // 1 depth 댓글만 렌더링 (replies는 표시하지 않음)
+          comments.forEach((comment) => {
+            renderComment(container, comment, false); // showReplies = false
+          });
+
+          // 무한 스크롤 설정 (all=true일 때는 무한 스크롤 비활성화)
+          if (isThreadView) {
+            setupInfiniteScroll();
+          }
+        } catch (error) {
+          console.error("댓글 로드 오류:", error);
+        } finally {
+          isLoadingComments = false;
+        }
+      }
+
+      // 다음 페이지 댓글 로드
+      async function loadMoreComments() {
+        if (!hasMoreComments || isLoadingComments || currentThreadCommentId) return;
+        await loadComments(currentPostId, currentPage + 1, false);
+      }
+
+      // 댓글 ID로 댓글 찾기 (재귀)
+      function findCommentById(comments, commentId) {
+        for (const comment of comments) {
+          if (comment.id === commentId) {
+            return comment;
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            const found = findCommentById(comment.replies, commentId);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+
+      // 메인 댓글 렌더링 (답글 포함)
+      function renderMainComment(container, comment) {
+        const mainCommentDiv = document.createElement("div");
+        mainCommentDiv.className = "comment-main-view";
+        mainCommentDiv.setAttribute("data-comment-id", comment.id);
+
+        const mainContent = document.createElement("div");
+        mainContent.className = "comment";
+        
+        const img = document.createElement("img");
+        img.className = "profile-img";
+        img.src = comment.writerProfile || "/images/default-profile.png";
+        img.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "comment-content";
+        
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "comment-author";
+        authorDiv.textContent = comment.writerName || "(이름 없음)";
+        
+        const textP = document.createElement("p");
+        textP.className = "comment-text";
+        textP.textContent = comment.comment;
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "comment-actions";
+        
+        // 답글 아이콘 버튼
+        const replyIconButton = document.createElement("button");
+        replyIconButton.className = "reply-button";
+        replyIconButton.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(comment.id);
+        };
+        actionsDiv.appendChild(replyIconButton);
+
+        // 답글 작성 폼
+        const replyForm = createReplyForm(comment.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        contentDiv.appendChild(replyForm);
+
+        mainContent.appendChild(img);
+        mainContent.appendChild(contentDiv);
+        mainCommentDiv.appendChild(mainContent);
+
+        // 답글들 표시 (스레드 구조)
+        if (comment.replies && comment.replies.length > 0) {
+          const repliesContainer = document.createElement("div");
+          repliesContainer.className = "comment-thread";
+          
+          comment.replies.forEach((reply) => {
+            renderComment(repliesContainer, reply, comment);
+          });
+          
+          contentDiv.appendChild(repliesContainer);
+        }
+
+        container.appendChild(mainCommentDiv);
+      }
+
+
+      // 모든 댓글을 평면 배열로 변환 (재귀)
+      function getAllCommentsFlat(comments) {
+        let result = [];
+        comments.forEach(comment => {
+          result.push(comment);
+          if (comment.replies && comment.replies.length > 0) {
+            result = result.concat(getAllCommentsFlat(comment.replies));
+          }
+        });
+        return result;
+      }
+
+      // 개별 댓글 렌더링 (기본 화면용 - 1 depth만)
+      function renderComment(container, comment, showReplies = false) {
+        const commentDiv = document.createElement("div");
+        commentDiv.className = "comment";
+        commentDiv.setAttribute("data-comment-id", comment.id);
+        
+        // 댓글 클릭 기능 제거 (기본적으로 대댓글이 표시되므로)
+
+        const img = document.createElement("img");
+        img.className = "profile-img";
+        img.src = comment.writerProfile || "/images/default-profile.png";
+        img.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "comment-content";
+        
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "comment-author";
+        authorDiv.textContent = comment.writerName || "(이름 없음)";
+        
+        // 긴 댓글 처리
+        const textP = document.createElement("p");
+        textP.className = "comment-text";
+        const maxLength = 200;
+        const fullText = comment.comment;
+        if (fullText.length > maxLength) {
+          const shortText = fullText.substring(0, maxLength);
+          textP.innerHTML = `<span class="comment-text-short">${shortText}...</span><span class="comment-text-full" style="display:none">${fullText}</span>`;
+          
+          const expandButton = document.createElement("button");
+          expandButton.className = "expand-comment-button";
+          expandButton.textContent = "더보기";
+          expandButton.onclick = function(e) {
+            e.stopPropagation();
+            const shortSpan = textP.querySelector(".comment-text-short");
+            const fullSpan = textP.querySelector(".comment-text-full");
+            if (shortSpan && fullSpan) {
+              if (shortSpan.style.display !== "none") {
+                shortSpan.style.display = "none";
+                fullSpan.style.display = "inline";
+                expandButton.textContent = "숨기기";
+              } else {
+                shortSpan.style.display = "inline";
+                fullSpan.style.display = "none";
+                expandButton.textContent = "더보기";
+              }
+            }
+          };
+          textP.appendChild(expandButton);
+        } else {
+          textP.textContent = fullText;
+        }
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "comment-actions";
+        
+        // 답글 아이콘 버튼
+        const replyIconButton = document.createElement("button");
+        replyIconButton.className = "reply-button";
+        replyIconButton.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(comment.id);
+        };
+        actionsDiv.appendChild(replyIconButton);
+        
+        // 답글 보기 버튼 (대댓글이 있을 때만)
+        if (comment.replies && comment.replies.length > 0) {
+          const viewRepliesButton = document.createElement("button");
+          viewRepliesButton.className = "view-replies-button";
+          viewRepliesButton.textContent = `답글 ${comment.replies.length}개 보기`;
+          viewRepliesButton.onclick = async function(e) {
+            e.stopPropagation();
+            await toggleRepliesThread(comment.id, comment.replies);
+          };
+          actionsDiv.appendChild(viewRepliesButton);
+        }
+        
+        // 답글 작성 폼
+        const replyForm = createReplyForm(comment.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        contentDiv.appendChild(replyForm);
+
+        commentDiv.appendChild(img);
+        commentDiv.appendChild(contentDiv);
+        
+        // 대댓글 컨테이너 생성 (기본적으로 숨김)
+        if (comment.replies && comment.replies.length > 0) {
+          const repliesContainer = document.createElement("div");
+          repliesContainer.className = "comment-thread";
+          repliesContainer.id = `replies-${comment.id}`;
+          repliesContainer.style.display = "none"; // 기본적으로 숨김
+          
+          commentDiv.appendChild(repliesContainer);
+        }
+        
+        container.appendChild(commentDiv);
+      }
+      
+      // 답글 보기/숨기기 토글 (스레드 형식)
+      async function toggleRepliesThread(commentId, replies) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) return;
+
+        let repliesContainer = document.getElementById(`replies-${commentId}`);
+        const viewButton = commentElement.querySelector(".view-replies-button");
+        
+        if (repliesContainer) {
+          // 이미 컨테이너가 있는 경우 토글
+          const isVisible = repliesContainer.style.display !== "none";
+          repliesContainer.style.display = isVisible ? "none" : "block";
+          
+          if (viewButton) {
+            viewButton.textContent = isVisible ? `답글 ${replies.length}개 보기` : `답글 숨기기`;
+          }
+          
+          // 이미 렌더링되어 있으면 리턴
+          if (!isVisible && repliesContainer.children.length > 0) {
+            return;
+          }
+        } else {
+          // 컨테이너가 없으면 생성
+          repliesContainer = document.createElement("div");
+          repliesContainer.className = "comment-thread";
+          repliesContainer.id = `replies-${commentId}`;
+          repliesContainer.style.display = "block";
+          commentElement.appendChild(repliesContainer);
+        }
+        
+        // 대댓글이 아직 렌더링되지 않은 경우
+        if (repliesContainer.children.length === 0) {
+          // 재귀적으로 모든 depth의 replies 렌더링
+          function renderRepliesRecursive(container, replies, parentId) {
+            replies.forEach((reply) => {
+              const replyDiv = document.createElement("div");
+              replyDiv.className = "comment comment-reply";
+              replyDiv.setAttribute("data-comment-id", reply.id);
+              replyDiv.setAttribute("data-parent-id", parentId);
+              
+              const replyImg = document.createElement("img");
+              replyImg.className = "profile-img";
+              replyImg.src = reply.writerProfile || "/images/default-profile.png";
+              replyImg.onerror = function() {
+                this.src = "/images/default-profile.png";
+              };
+              
+              const replyContentDiv = document.createElement("div");
+              replyContentDiv.className = "comment-content";
+              
+              const replyAuthorDiv = document.createElement("div");
+              replyAuthorDiv.className = "comment-author";
+              replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyTextP = document.createElement("p");
+              replyTextP.className = "comment-text";
+              replyTextP.textContent = reply.comment;
+              
+              // 대댓글에는 답글 버튼과 폼 제거
+              
+              replyContentDiv.appendChild(replyAuthorDiv);
+              replyContentDiv.appendChild(replyTextP);
+              
+              replyDiv.appendChild(replyImg);
+              replyDiv.appendChild(replyContentDiv);
+              
+              container.appendChild(replyDiv);
+              
+              // 재귀적으로 답글의 답글도 렌더링
+              if (reply.replies && reply.replies.length > 0) {
+                renderRepliesRecursive(container, reply.replies, reply.id);
+              }
+            });
+          }
+          
+          renderRepliesRecursive(repliesContainer, replies, commentId);
+        }
+      }
+
+      // 답글 보기/숨기기 토글
+      function toggleReplies(commentId, replies) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) return;
+
+        let repliesContainer = document.getElementById(`replies-${commentId}`);
+        
+        if (repliesContainer) {
+          // 컨테이너가 이미 있는 경우
+          const isVisible = repliesContainer.style.display !== "none";
+          
+          if (isVisible) {
+            // 숨기기
+            repliesContainer.style.display = "none";
+            const viewButton = commentElement.querySelector(".view-replies-button");
+            if (viewButton) {
+              viewButton.textContent = `답글 ${replies.length}개 보기`;
+            }
+          } else {
+            // 표시하기
+            if (repliesContainer.children.length === 0) {
+              // 대댓글이 아직 로드되지 않은 경우 로드
+              replies.forEach((reply) => {
+                const parentCommentData = originalComments.get(commentId) || { id: commentId };
+                renderComment(repliesContainer, reply, parentCommentData, true, 1);
+              });
+            }
+            repliesContainer.style.display = "block";
+            const viewButton = commentElement.querySelector(".view-replies-button");
+            if (viewButton) {
+              viewButton.textContent = `답글 숨기기`;
+            }
+          }
+        } else {
+          // 컨테이너가 없는 경우 생성 (이론적으로는 발생하지 않아야 함)
+          repliesContainer = document.createElement("div");
+          repliesContainer.className = "comment-replies-container";
+          repliesContainer.id = `replies-${commentId}`;
+          repliesContainer.style.marginTop = "12px";
+          
+          replies.forEach((reply) => {
+            const parentCommentData = originalComments.get(commentId) || { id: commentId };
+            renderComment(repliesContainer, reply, parentCommentData, true, 1);
+          });
+          
+          commentElement.appendChild(repliesContainer);
+          
+          const viewButton = commentElement.querySelector(".view-replies-button");
+          if (viewButton) {
+            viewButton.textContent = `답글 숨기기`;
+          }
+        }
+      }
+
+      // 댓글 카드 클릭 시 대댓글 표시/숨김
+      function toggleCommentReplies(commentId, replies) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) return;
+
+        let repliesContainer = document.getElementById(`replies-${commentId}`);
+        
+        if (repliesContainer) {
+          // 이미 컨테이너가 있는 경우 토글
+          const isVisible = repliesContainer.style.display !== "none";
+          repliesContainer.style.display = isVisible ? "none" : "block";
+          return;
+        }
+        
+        // 대댓글이 없으면 API에서 로드
+        if (!replies || replies.length === 0) {
+          // 서버에서 대댓글 로드
+          loadRepliesFromServer(commentId);
+          return;
+        }
+        
+        // 대댓글 컨테이너 생성 (스레드 형식)
+        repliesContainer = document.createElement("div");
+        repliesContainer.className = "comment-thread";
+        repliesContainer.id = `replies-${commentId}`;
+        repliesContainer.style.display = "block"; // 표시
+        
+        // 재귀적으로 모든 depth의 replies 렌더링
+        function renderRepliesRecursive(container, replies) {
+          replies.forEach((reply) => {
+            const replyDiv = document.createElement("div");
+            replyDiv.className = "comment comment-reply";
+            replyDiv.setAttribute("data-comment-id", reply.id);
+            replyDiv.setAttribute("data-parent-id", commentId);
+            
+            const replyImg = document.createElement("img");
+            replyImg.className = "profile-img";
+            replyImg.src = reply.writerProfile || "/images/default-profile.png";
+            replyImg.onerror = function() {
+              this.src = "/images/default-profile.png";
+            };
+            
+            const replyContentDiv = document.createElement("div");
+            replyContentDiv.className = "comment-content";
+            
+            const replyAuthorDiv = document.createElement("div");
+            replyAuthorDiv.className = "comment-author";
+            replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyTextP = document.createElement("p");
+            replyTextP.className = "comment-text";
+            replyTextP.textContent = reply.comment;
+            
+            const replyActionsDiv = document.createElement("div");
+            replyActionsDiv.className = "comment-actions";
+            
+            const replyIconBtn = document.createElement("button");
+            replyIconBtn.className = "reply-button";
+            replyIconBtn.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+            replyIconBtn.onclick = function(e) {
+              e.stopPropagation();
+              toggleReplyForm(reply.id);
+            };
+            replyActionsDiv.appendChild(replyIconBtn);
+            
+            const replyForm = createReplyForm(reply.id);
+            
+            replyContentDiv.appendChild(replyAuthorDiv);
+            replyContentDiv.appendChild(replyTextP);
+            replyContentDiv.appendChild(replyActionsDiv);
+            replyContentDiv.appendChild(replyForm);
+            
+            replyDiv.appendChild(replyImg);
+            replyDiv.appendChild(replyContentDiv);
+            
+            container.appendChild(replyDiv);
+            
+            // 재귀적으로 답글의 답글도 렌더링
+            if (reply.replies && reply.replies.length > 0) {
+              renderRepliesRecursive(container, reply.replies);
+            }
+          });
+        }
+        
+        renderRepliesRecursive(repliesContainer, replies);
+        commentElement.appendChild(repliesContainer);
+      }
+
+      // 서버에서 대댓글 로드
+      async function loadRepliesFromServer(commentId) {
+        try {
+          // 전체 댓글 목록을 가져와서 해당 댓글의 replies 찾기
+          const response = await fetch(`/api/posts/${currentPostId}/comments?all=true`);
+          if (!response.ok) {
+            console.error("댓글 로드 실패:", response.status);
+            return;
+          }
+          
+          const allComments = await response.json();
+          
+          // 해당 댓글 찾기
+          function findCommentById(comments, id) {
+            for (const comment of comments) {
+              if (comment.id === id) {
+                return comment;
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                const found = findCommentById(comment.replies, id);
+                if (found) return found;
+              }
+            }
+            return null;
+          }
+          
+          const targetComment = findCommentById(allComments, commentId);
+          if (!targetComment || !targetComment.replies || targetComment.replies.length === 0) {
+            return;
+          }
+          
+          const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+          if (!commentElement) return;
+          
+          let repliesContainer = document.getElementById(`replies-${commentId}`);
+          if (!repliesContainer) {
+            repliesContainer = document.createElement("div");
+            repliesContainer.className = "comment-thread";
+            repliesContainer.id = `replies-${commentId}`;
+            repliesContainer.style.display = "block";
+            commentElement.appendChild(repliesContainer);
+          }
+          
+          // 재귀적으로 모든 depth의 replies 렌더링
+          function renderRepliesRecursive(container, replies) {
+            replies.forEach((reply) => {
+              const replyDiv = document.createElement("div");
+              replyDiv.className = "comment comment-reply";
+              replyDiv.setAttribute("data-comment-id", reply.id);
+              replyDiv.setAttribute("data-parent-id", commentId);
+              
+              const replyImg = document.createElement("img");
+              replyImg.className = "profile-img";
+              replyImg.src = reply.writerProfile || "/images/default-profile.png";
+              replyImg.onerror = function() {
+                this.src = "/images/default-profile.png";
+              };
+              
+              const replyContentDiv = document.createElement("div");
+              replyContentDiv.className = "comment-content";
+              
+              const replyAuthorDiv = document.createElement("div");
+              replyAuthorDiv.className = "comment-author";
+              replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyTextP = document.createElement("p");
+              replyTextP.className = "comment-text";
+              replyTextP.textContent = reply.comment;
+              
+              // 대댓글에는 답글 버튼과 폼 제거
+              
+              replyContentDiv.appendChild(replyAuthorDiv);
+              replyContentDiv.appendChild(replyTextP);
+              
+              replyDiv.appendChild(replyImg);
+              replyDiv.appendChild(replyContentDiv);
+              
+              container.appendChild(replyDiv);
+              
+              // 재귀적으로 답글의 답글도 렌더링
+              if (reply.replies && reply.replies.length > 0) {
+                renderRepliesRecursive(container, reply.replies);
+              }
+            });
+          }
+          
+          renderRepliesRecursive(repliesContainer, targetComment.replies);
+        } catch (error) {
+          console.error("대댓글 로드 오류:", error);
+        }
+      }
+
+      // 대댓글 지연 로딩 및 표시
+      async function loadAndShowReplies(commentId, replies) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) return;
+
+        let repliesContainer = document.getElementById(`replies-${commentId}`);
+        
+        if (repliesContainer) {
+          // 이미 로드된 경우 토글
+          const isVisible = repliesContainer.style.display !== "none";
+          repliesContainer.style.display = isVisible ? "none" : "block";
+          
+          const viewButton = commentElement.querySelector(".view-replies-button");
+          if (viewButton) {
+            viewButton.textContent = isVisible ? `답글 ${replies.length}개 보기` : `답글 숨기기`;
+          }
+          return;
+        }
+        
+        // 대댓글 컨테이너 생성 (스레드 형식)
+        repliesContainer = document.createElement("div");
+        repliesContainer.className = "comment-thread";
+        repliesContainer.id = `replies-${commentId}`;
+        
+        // 재귀적으로 모든 depth의 replies 렌더링
+        function renderRepliesRecursive(container, replies) {
+          replies.forEach((reply) => {
+            const replyDiv = document.createElement("div");
+            replyDiv.className = "comment comment-reply";
+            replyDiv.setAttribute("data-comment-id", reply.id);
+            replyDiv.setAttribute("data-parent-id", commentId);
+            
+            const replyImg = document.createElement("img");
+            replyImg.className = "profile-img";
+            replyImg.src = reply.writerProfile || "/images/default-profile.png";
+            replyImg.onerror = function() {
+              this.src = "/images/default-profile.png";
+            };
+            
+            const replyContentDiv = document.createElement("div");
+            replyContentDiv.className = "comment-content";
+            
+            const replyAuthorDiv = document.createElement("div");
+            replyAuthorDiv.className = "comment-author";
+            replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyTextP = document.createElement("p");
+            replyTextP.className = "comment-text";
+            replyTextP.textContent = reply.comment;
+            
+            // 대댓글에는 답글 버튼과 폼 제거
+            
+            replyContentDiv.appendChild(replyAuthorDiv);
+            replyContentDiv.appendChild(replyTextP);
+            
+            replyDiv.appendChild(replyImg);
+            replyDiv.appendChild(replyContentDiv);
+            
+            container.appendChild(replyDiv);
+            
+            // 재귀적으로 답글의 답글도 렌더링
+            if (reply.replies && reply.replies.length > 0) {
+              renderRepliesRecursive(container, reply.replies);
+            }
+          });
+        }
+        
+        renderRepliesRecursive(repliesContainer, replies);
+        commentElement.appendChild(repliesContainer);
+        
+        const viewButton = commentElement.querySelector(".view-replies-button");
+        if (viewButton) {
+          viewButton.textContent = `답글 숨기기`;
+        }
+      }
+
+      // 대댓글 렌더링 (1 depth만)
+      function renderReply(container, reply, parentCommentId) {
+        const replyDiv = document.createElement("div");
+        replyDiv.className = "comment comment-reply";
+        replyDiv.setAttribute("data-comment-id", reply.id);
+        replyDiv.setAttribute("data-parent-id", parentCommentId);
+        
+        // 대댓글 클릭 시 Thread View 열기
+        replyDiv.classList.add("clickable-comment");
+        replyDiv.onclick = function(e) {
+          if (!e.target.closest("button") && !e.target.closest("textarea")) {
+            openThreadView(reply);
+          }
+        };
+
+        const img = document.createElement("img");
+        img.className = "profile-img";
+        img.src = reply.writerProfile || "/images/default-profile.png";
+        img.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "comment-content";
+        
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "comment-author";
+        authorDiv.textContent = reply.writerName || "(이름 없음)";
+        
+        // 긴 댓글 처리
+        const textP = document.createElement("p");
+        textP.className = "comment-text";
+        const maxLength = 200;
+        const fullText = reply.comment;
+        if (fullText.length > maxLength) {
+          const shortText = fullText.substring(0, maxLength);
+          textP.innerHTML = `<span class="comment-text-short">${shortText}...</span><span class="comment-text-full" style="display:none">${fullText}</span>`;
+          
+          const expandButton = document.createElement("button");
+          expandButton.className = "expand-comment-button";
+          expandButton.textContent = "더보기";
+          expandButton.onclick = function(e) {
+            e.stopPropagation();
+            const shortSpan = textP.querySelector(".comment-text-short");
+            const fullSpan = textP.querySelector(".comment-text-full");
+            if (shortSpan && fullSpan) {
+              if (shortSpan.style.display !== "none") {
+                shortSpan.style.display = "none";
+                fullSpan.style.display = "inline";
+                expandButton.textContent = "숨기기";
+              } else {
+                shortSpan.style.display = "inline";
+                fullSpan.style.display = "none";
+                expandButton.textContent = "더보기";
+              }
+            }
+          };
+          textP.appendChild(expandButton);
+        } else {
+          textP.textContent = fullText;
+        }
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "comment-actions";
+        
+        // 답글 아이콘 버튼
+        const replyIconButton = document.createElement("button");
+        replyIconButton.className = "reply-button";
+        replyIconButton.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(reply.id);
+        };
+        actionsDiv.appendChild(replyIconButton);
+        
+        // 답글 보기 버튼 (depth 2 이상은 Thread View에서만)
+        if (reply.replies && reply.replies.length > 0) {
+          const viewRepliesButton = document.createElement("button");
+          viewRepliesButton.className = "view-replies-button";
+          viewRepliesButton.textContent = `답글 ${reply.replies.length}개 보기`;
+          viewRepliesButton.onclick = function(e) {
+            e.stopPropagation();
+            openThreadView(reply); // depth 2 이상은 Thread View로
+          };
+          actionsDiv.appendChild(viewRepliesButton);
+        }
+        
+        // 답글 작성 폼
+        const replyForm = createReplyForm(reply.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        contentDiv.appendChild(replyForm);
+
+        replyDiv.appendChild(img);
+        replyDiv.appendChild(contentDiv);
+        container.appendChild(replyDiv);
+      }
+
+      // Thread View 열기
+      function openThreadView(comment) {
+        currentThreadCommentId = comment.id;
+        loadComments(currentPostId, 0, true);
+      }
+
+      // Thread View 표시
+      async function showThreadView(commentId, allComments) {
+        const container = document.getElementById("comments");
+        if (!container) return;
+
+        // 전체 댓글에서 해당 댓글 찾기
+        const targetComment = findCommentRecursive(allComments, commentId);
+        if (!targetComment) {
+          console.error("댓글을 찾을 수 없습니다.");
+          return;
+        }
+
+        container.innerHTML = "";
+
+        const threadContainer = document.createElement("div");
+        threadContainer.className = "thread-view";
+        threadContainer.id = "thread-view-container";
+
+        // 뒤로가기 버튼
+        const backButton = document.createElement("button");
+        backButton.className = "thread-back-button";
+        backButton.textContent = "← 목록으로";
+        backButton.onclick = function() {
+          currentThreadCommentId = null;
+          loadComments(currentPostId, 0, false);
+        };
+        threadContainer.appendChild(backButton);
+
+        // Original Tweet (게시물) 표시
+        if (currentPost) {
+          const originalTweetDiv = document.createElement("div");
+          originalTweetDiv.className = "thread-original-tweet";
+          originalTweetDiv.innerHTML = `
+            <div style="padding: 16px; border-bottom: 1px solid #eff3f4;">
+              <div style="font-weight: 600; margin-bottom: 8px;">원본 게시물</div>
+              <div>${currentPost.content || ""}</div>
+            </div>
+          `;
+          threadContainer.appendChild(originalTweetDiv);
+        }
+
+        // 상위 댓글 경로 찾기 및 표시
+        const threadPath = findThreadPath(allComments, commentId);
+        if (threadPath && threadPath.length > 0) {
+          threadPath.forEach(comment => {
+            if (comment.id !== commentId) {
+              renderThreadComment(threadContainer, comment, null, 0);
+            }
+          });
+        }
+
+        // 메인 댓글 표시
+        renderThreadComment(threadContainer, targetComment, null, 0);
+
+        // 하위 답글들 표시 (모든 depth)
+        if (targetComment.replies && targetComment.replies.length > 0) {
+          targetComment.replies.forEach((reply) => {
+            renderThreadCommentRecursive(threadContainer, reply, targetComment, 1);
+          });
+        }
+
+        container.appendChild(threadContainer);
+      }
+
+      // Thread View용 댓글 렌더링 (모든 depth 표시)
+      function renderThreadComment(container, comment, parentComment, depth) {
+        const commentDiv = document.createElement("div");
+        commentDiv.className = "comment thread-comment";
+        commentDiv.setAttribute("data-comment-id", comment.id);
+        commentDiv.setAttribute("data-depth", depth);
+        
+        if (depth > 0) {
+          commentDiv.style.marginLeft = `${depth * 40}px`;
+          commentDiv.style.borderLeft = "2px solid #eff3f4";
+          commentDiv.style.paddingLeft = "12px";
+        }
+
+        const img = document.createElement("img");
+        img.className = "profile-img";
+        img.src = comment.writerProfile || "/images/default-profile.png";
+        img.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "comment-content";
+        
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "comment-author";
+        authorDiv.textContent = comment.writerName || "(이름 없음)";
+        
+        // 긴 댓글 처리
+        const textP = document.createElement("p");
+        textP.className = "comment-text";
+        const maxLength = 200;
+        const fullText = comment.comment;
+        if (fullText.length > maxLength) {
+          const shortText = fullText.substring(0, maxLength);
+          textP.innerHTML = `<span class="comment-text-short">${shortText}...</span><span class="comment-text-full" style="display:none">${fullText}</span>`;
+          
+          const expandButton = document.createElement("button");
+          expandButton.className = "expand-comment-button";
+          expandButton.textContent = "더보기";
+          expandButton.onclick = function(e) {
+            e.stopPropagation();
+            const shortSpan = textP.querySelector(".comment-text-short");
+            const fullSpan = textP.querySelector(".comment-text-full");
+            if (shortSpan && fullSpan) {
+              if (shortSpan.style.display !== "none") {
+                shortSpan.style.display = "none";
+                fullSpan.style.display = "inline";
+                expandButton.textContent = "숨기기";
+              } else {
+                shortSpan.style.display = "inline";
+                fullSpan.style.display = "none";
+                expandButton.textContent = "더보기";
+              }
+            }
+          };
+          textP.appendChild(expandButton);
+        } else {
+          textP.textContent = fullText;
+        }
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "comment-actions";
+        
+        // 답글 아이콘 버튼
+        const replyIconButton = document.createElement("button");
+        replyIconButton.className = "reply-button";
+        replyIconButton.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(comment.id);
+        };
+        actionsDiv.appendChild(replyIconButton);
+        
+        // 답글 작성 폼
+        const replyForm = createReplyForm(comment.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        contentDiv.appendChild(replyForm);
+
+        commentDiv.appendChild(img);
+        commentDiv.appendChild(contentDiv);
+        container.appendChild(commentDiv);
+      }
+
+      // Thread View용 재귀 렌더링 (모든 depth)
+      function renderThreadCommentRecursive(container, comment, parentComment, depth) {
+        renderThreadComment(container, comment, parentComment, depth);
+        
+        if (comment.replies && comment.replies.length > 0) {
+          comment.replies.forEach((reply) => {
+            renderThreadCommentRecursive(container, reply, comment, depth + 1);
+          });
+        }
+      }
+
+      // 댓글 찾기 (재귀)
+      function findCommentRecursive(comments, commentId) {
+        for (const comment of comments) {
+          if (comment.id === commentId) {
+            return comment;
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            const found = findCommentRecursive(comment.replies, commentId);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+
+      // Thread 경로 찾기 (재귀)
+      function findThreadPath(allComments, targetId, path = []) {
+        for (const comment of allComments) {
+          if (comment.id === targetId) {
+            return path;
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            const found = findThreadPath(comment.replies, targetId, [...path, comment]);
+            if (found !== null) return found;
+          }
+        }
+        return null;
+      }
+
+      // 재귀적으로 댓글 렌더링 (Thread View용, 모든 depth)
+      function renderCommentRecursive(container, comment, parentComment, depth) {
+        renderComment(container, comment, parentComment, true, depth);
+        
+        if (comment.replies && comment.replies.length > 0) {
+          comment.replies.forEach((reply) => {
+            renderCommentRecursive(container, reply, comment, depth + 1);
+          });
+        }
+      }
+
+      // 무한 스크롤 설정
+      function setupInfiniteScroll() {
+        // 기존 이벤트 리스너 제거
+        window.removeEventListener('scroll', handleScroll);
+        
+        // 새로운 이벤트 리스너 추가
+        window.addEventListener('scroll', handleScroll);
+      }
+
+      function handleScroll() {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+          if (hasMoreComments && !isLoadingComments) {
+            loadMoreComments();
+          }
+        }
+      }
+
+      // 답글을 메인으로 보여주는 함수
+      function showReplyAsMain(replyComment, parentComment) {
+        // 현재 댓글 목록 숨기기
+        const commentsContainer = document.getElementById("comments");
+        if (!commentsContainer) return;
+
+        // 메인 댓글 영역 생성
+        const mainReplyDiv = document.createElement("div");
+        mainReplyDiv.className = "comment-main-view";
+        mainReplyDiv.id = "main-reply-view";
+
+        // 원문 댓글 표시
+        const originalDiv = document.createElement("div");
+        originalDiv.className = "reply-original-main";
+        originalDiv.style.marginBottom = "16px";
+        originalDiv.style.padding = "16px";
+        originalDiv.style.backgroundColor = "#f7f9f9";
+        originalDiv.style.borderRadius = "12px";
+        originalDiv.style.borderLeft = "4px solid #1d9bf0";
+        originalDiv.style.cursor = "pointer";
+        
+        const originalHeader = document.createElement("div");
+        originalHeader.className = "reply-original-header";
+        originalHeader.innerHTML = `<span class="reply-original-author">${parentComment.writerName || "(이름 없음)"}</span> <span>에게 답글</span>`;
+        
+        const originalText = document.createElement("div");
+        originalText.className = "reply-original-text";
+        originalText.textContent = parentComment.comment;
+        
+        originalDiv.appendChild(originalHeader);
+        originalDiv.appendChild(originalText);
+        originalDiv.onclick = function() {
+          // 원문 클릭 시 원래 댓글 목록으로 돌아가기
+          loadComments(currentPostId, 0);
+        };
+
+        // 답글 메인 표시
+        const replyMainDiv = document.createElement("div");
+        replyMainDiv.className = "comment";
+        replyMainDiv.style.padding = "16px";
+        replyMainDiv.style.backgroundColor = "#ffffff";
+        replyMainDiv.style.border = "2px solid #1d9bf0";
+        replyMainDiv.style.borderRadius = "12px";
+        replyMainDiv.style.marginBottom = "16px";
+
+        const replyImg = document.createElement("img");
+        replyImg.className = "profile-img";
+        replyImg.src = replyComment.writerProfile || "/images/default-profile.png";
+        replyImg.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const replyContentDiv = document.createElement("div");
+        replyContentDiv.className = "comment-content";
+        
+        const replyAuthorDiv = document.createElement("div");
+        replyAuthorDiv.className = "comment-author";
+        replyAuthorDiv.textContent = replyComment.writerName || "(이름 없음)";
+        
+        const replyTextP = document.createElement("p");
+        replyTextP.className = "comment-text";
+        replyTextP.textContent = replyComment.comment;
+
+        const replyActionsDiv = document.createElement("div");
+        replyActionsDiv.className = "comment-actions";
+        
+        const replyIconBtn = document.createElement("button");
+        replyIconBtn.className = "reply-button";
+        replyIconBtn.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconBtn.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(replyComment.id);
+        };
+        replyActionsDiv.appendChild(replyIconBtn);
+
+        const replyForm = createReplyForm(replyComment.id);
+
+        replyContentDiv.appendChild(replyAuthorDiv);
+        replyContentDiv.appendChild(replyTextP);
+        replyContentDiv.appendChild(replyActionsDiv);
+        replyContentDiv.appendChild(replyForm);
+
+        replyMainDiv.appendChild(replyImg);
+        replyMainDiv.appendChild(replyContentDiv);
+
+        // 하위 답글들 스레드 형식으로 표시
+        if (replyComment.replies && replyComment.replies.length > 0) {
+          const repliesThreadContainer = document.createElement("div");
+          repliesThreadContainer.className = "comment-thread";
+          repliesThreadContainer.style.marginLeft = "40px";
+          repliesThreadContainer.style.marginTop = "16px";
+          repliesThreadContainer.style.paddingTop = "16px";
+          repliesThreadContainer.style.borderTop = "1px solid #eff3f4";
+          
+          replyComment.replies.forEach((nestedReply) => {
+            renderComment(repliesThreadContainer, nestedReply, replyComment);
+          });
+          
+          replyContentDiv.appendChild(repliesThreadContainer);
+        }
+
+        mainReplyDiv.appendChild(originalDiv);
+        mainReplyDiv.appendChild(replyMainDiv);
+
+        // 기존 댓글 목록을 메인 답글 뷰로 교체
+        commentsContainer.innerHTML = "";
+        commentsContainer.appendChild(mainReplyDiv);
+
+        // 스크롤을 맨 위로
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // 답글 작성 폼 생성 (공통 함수)
+      function createReplyForm(commentId) {
+        const replyForm = document.createElement("div");
+        replyForm.className = "reply-form";
+        replyForm.id = `reply-form-${commentId}`;
+        
+        const replyTextarea = document.createElement("textarea");
+        replyTextarea.className = "reply-textarea";
+        replyTextarea.placeholder = "답글을 입력하세요...";
+        
+        const replyButtonsDiv = document.createElement("div");
+        replyButtonsDiv.className = "reply-buttons";
+        
+        const replySubmitButton = document.createElement("button");
+        replySubmitButton.className = "reply-submit-button";
+        replySubmitButton.textContent = "등록";
+        replySubmitButton.onclick = function(e) {
+          e.stopPropagation();
+          submitReply(commentId, replyTextarea.value);
+        };
+        
+        const replyCancelButton = document.createElement("button");
+        replyCancelButton.className = "reply-cancel-button";
+        replyCancelButton.textContent = "취소";
+        replyCancelButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(commentId);
+        };
+        
+        replyButtonsDiv.appendChild(replySubmitButton);
+        replyButtonsDiv.appendChild(replyCancelButton);
+        
+        replyForm.appendChild(replyTextarea);
+        replyForm.appendChild(replyButtonsDiv);
+        
+        return replyForm;
+      }
+
+      // 원문 댓글 정보 저장 (답글 아이콘 클릭 시 사용)
+      const originalComments = new Map();
+
+      // 답글 아이콘 클릭 시 원문 표시/숨김
+      function toggleOriginalComment(commentId) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) return;
+
+        let originalDiv = commentElement.querySelector('.reply-original');
+        
+        if (originalDiv) {
+          // 이미 원문이 표시되어 있으면 숨김
+          originalDiv.remove();
+        } else {
+          // 원문 표시
+          const originalComment = originalComments.get(commentId);
+          if (originalComment) {
+            originalDiv = createOriginalCommentDiv(originalComment);
+            const contentDiv = commentElement.querySelector('.comment-content');
+            if (contentDiv) {
+              contentDiv.insertBefore(originalDiv, contentDiv.firstChild);
+            }
+          }
+        }
+      }
+
+      // 원문 댓글 표시 영역 생성
+      function createOriginalCommentDiv(originalComment) {
+        const originalDiv = document.createElement("div");
+        originalDiv.className = "reply-original";
+        originalDiv.onclick = function() {
+          // 원문 클릭 시 해당 댓글로 스크롤
+          const originalElement = document.querySelector(`[data-comment-id="${originalComment.id}"]`);
+          if (originalElement) {
+            originalElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        };
+
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "reply-original-header";
+        headerDiv.innerHTML = `<span class="reply-original-author">${originalComment.writerName || "(이름 없음)"}</span> <span>에게 답글</span>`;
+
+        const textDiv = document.createElement("div");
+        textDiv.className = "reply-original-text";
+        textDiv.textContent = originalComment.comment;
+
+        originalDiv.appendChild(headerDiv);
+        originalDiv.appendChild(textDiv);
+
+        return originalDiv;
+      }
+
+      // 댓글 클릭 시 메인 댓글로 설정하고 답글 표시
+      function setMainComment(commentId) {
+        currentThreadCommentId = commentId;
+        // Thread View로 이동
+        loadComments(currentPostId, 0, true);
+      }
+
+      // 댓글 클릭 이벤트 핸들러
+      function handleCommentClick(commentId, event) {
+        // 버튼 클릭이 아닌 경우에만 메인 댓글로 설정
+        if (!event.target.closest("button") && !event.target.closest("textarea")) {
+          setMainComment(commentId);
+        }
+      }
+
+      // 답글 폼 토글
+      function toggleReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm) {
+          replyForm.classList.toggle("active");
+          if (replyForm.classList.contains("active")) {
+            const textarea = replyForm.querySelector(".reply-textarea");
+            if (textarea) {
+              textarea.focus();
+            }
+          } else {
+            const textarea = replyForm.querySelector(".reply-textarea");
+            if (textarea) {
+              textarea.value = "";
+            }
+          }
+        }
+      }
+
+      // 답글 작성
+      async function submitReply(parentCommentId, replyContent) {
+        if (!replyContent || replyContent.trim() === "") {
+          alert("답글 내용을 입력해주세요.");
+          return;
+        }
+
+        const userEmail = await getMemberEmail();
+        if (!userEmail) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+
+        const data = {
+          comment: replyContent,
+          user: userEmail,
+          article: currentPostId,
+          parentCommentId: parentCommentId
+        };
+
+        try {
+          const response = await fetch(`/api/posts/${currentPostId}/comments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("답글 저장 실패:", response.status, errorText);
+            throw new Error(`답글 저장 실패: ${response.status} ${errorText}`);
+          }
+
+          const newReply = await response.json();
+          
+          // 답글 폼 닫기
+          toggleReplyForm(parentCommentId);
+          
+          // 즉시 UI에 반영
+          const parentElement = document.querySelector(`[data-comment-id="${parentCommentId}"]`);
+          if (parentElement && !currentThreadCommentId) {
+            let repliesContainer = document.getElementById(`replies-${parentCommentId}`);
+            
+            if (!repliesContainer) {
+              // 답글 컨테이너가 없으면 생성 (스레드 형식, 기본적으로 숨김)
+              repliesContainer = document.createElement("div");
+              repliesContainer.className = "comment-thread";
+              repliesContainer.id = `replies-${parentCommentId}`;
+              repliesContainer.style.display = "none"; // 기본적으로 숨김
+              
+              // 댓글 div 안에 추가
+              parentElement.appendChild(repliesContainer);
+            }
+            
+            // 새 답글을 스레드 형식으로 렌더링
+            const replyDiv = document.createElement("div");
+            replyDiv.className = "comment comment-reply";
+            replyDiv.setAttribute("data-comment-id", newReply.id);
+            replyDiv.setAttribute("data-parent-id", parentCommentId);
+            
+            const replyImg = document.createElement("img");
+            replyImg.className = "profile-img";
+            replyImg.src = newReply.writerProfile || "/images/default-profile.png";
+            replyImg.onerror = function() {
+              this.src = "/images/default-profile.png";
+            };
+            
+            const replyContentDiv = document.createElement("div");
+            replyContentDiv.className = "comment-content";
+            
+            const replyAuthorDiv = document.createElement("div");
+            replyAuthorDiv.className = "comment-author";
+            replyAuthorDiv.textContent = newReply.writerName || "(이름 없음)";
+            
+            const replyTextP = document.createElement("p");
+            replyTextP.className = "comment-text";
+            replyTextP.textContent = newReply.comment;
+            
+            // 대댓글에는 답글 버튼과 폼 제거
+            
+            replyContentDiv.appendChild(replyAuthorDiv);
+            replyContentDiv.appendChild(replyTextP);
+            
+            replyDiv.appendChild(replyImg);
+            replyDiv.appendChild(replyContentDiv);
+            
+            repliesContainer.appendChild(replyDiv);
+            
+            // 답글 개수 업데이트
+            const viewButton = parentElement.querySelector(".view-replies-button");
+            if (viewButton) {
+              const replyCount = repliesContainer.children.length;
+              viewButton.textContent = `답글 ${replyCount}개 보기`;
+            }
+          } else {
+            // Thread View인 경우 전체 새로고침
+            await loadComments(currentPostId, 0, true);
+          }
+        } catch (error) {
+          console.error("답글 작성 오류:", error);
+          alert("답글 저장 중 오류가 발생했습니다.");
+        }
+      }
+
+      // 댓글 작성
+      async function submitComment() {
+        const commentContent = document.getElementById("commentContent").value;
+        
+        if (!commentContent || commentContent.trim() === "") {
+          alert("댓글 내용을 입력해주세요.");
+          return;
+        }
+
+        const userEmail = await getMemberEmail();
+        if (!userEmail) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+
+        const data = {
+          comment: commentContent,
+          user: userEmail,
+          article: currentPostId
+        };
+
+        try {
+          const response = await fetch(`/api/posts/${currentPostId}/comments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("댓글 저장 실패:", response.status, errorText);
+            throw new Error(`댓글 저장 실패: ${response.status} ${errorText}`);
+          }
+
+          const newComment = await response.json();
+          
+          // 입력 필드 초기화
+          document.getElementById("commentContent").value = "";
+          
+          // 즉시 UI에 반영
+          if (currentThreadCommentId) {
+            // Thread View인 경우 전체 새로고침
+            await loadComments(currentPostId, 0, true);
+          } else {
+            // 기본 화면인 경우 새 댓글을 맨 위에 추가
+            const container = document.getElementById("comments");
+            if (container) {
+              // 빈 메시지 제거
+              const emptyMessage = container.querySelector("div[style*='text-align: center']");
+              if (emptyMessage) {
+                emptyMessage.remove();
+              }
+              
+              // 새 댓글을 맨 위에 추가
+              renderComment(container, newComment, false);
+            }
+          }
+        } catch (error) {
+          console.error("댓글 작성 오류:", error);
+          alert("댓글 저장 중 오류가 발생했습니다.");
+        }
+      }
+    </script>
+  </body>
+</html>
+
