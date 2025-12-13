@@ -15,8 +15,8 @@ if ! command -v node &> /dev/null; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
 fi
-echo "✅ Node.js 버전: $(node --version)"
-echo "✅ npm 버전: $(npm --version)"
+echo "Node.js 버전: $(node --version)"
+echo "npm 버전: $(npm --version)"
 
 # 2. 필요한 패키지 설치
 echo "2. 필요한 패키지 설치 중..."
@@ -26,7 +26,7 @@ else
     npm init -y
     npm install express
 fi
-echo "✅ 패키지 설치 완료"
+echo "패키지 설치 완료"
 
 # 3. Webhook 서버 시작 (PM2 사용)
 echo "3. Webhook 서버 시작 중..."
@@ -45,7 +45,7 @@ pm2 start webhook-server.js --name webhook-server
 pm2 save
 pm2 startup
 
-echo "✅ Webhook 서버가 시작되었습니다!"
+echo "Webhook 서버가 시작되었습니다"
 echo ""
 echo "서버 상태 확인:"
 pm2 status
