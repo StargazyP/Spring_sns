@@ -8,15 +8,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import kr.co.inhatc.inhatc.MemberController;
+import kr.co.inhatc.inhatc.config.SecurityConfig;
+import kr.co.inhatc.inhatc.config.TestSecurityConfig;
 import kr.co.inhatc.inhatc.dto.MemberDTO;
 import kr.co.inhatc.inhatc.service.MemberService;
 
-@WebMvcTest(MemberController.class)
+@WebMvcTest(controllers = MemberController.class,
+            excludeAutoConfiguration = SecurityAutoConfiguration.class,
+            excludeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
+@Import(TestSecurityConfig.class)
 @DisplayName("MemberController 통합 테스트")
 class MemberControllerTest {
 
