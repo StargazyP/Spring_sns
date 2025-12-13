@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * 테스트용 Security 설정
  * 모든 요청을 허용하고 Security 필터를 최소화
- * @EnableWebSecurity 없이 SecurityFilterChain만 제공
+ * @EnableWebSecurity 없이 SecurityFilterChain만 제공하여 SecurityConfig와 충돌 방지
  */
 @TestConfiguration
 public class TestSecurityConfig {
