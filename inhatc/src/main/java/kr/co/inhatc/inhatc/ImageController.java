@@ -29,26 +29,47 @@ public class ImageController {
     
     @Value("${app.upload.posts-dir}")
     private String postsUploadDir;
+    
+    @Value("${app.upload.profile-dir}")
+    private String profileUploadDir;
 
     @GetMapping("/{email}/{filename:.+}")
     public ResponseEntity<Resource> getImage(
             @PathVariable String email,
             @PathVariable String filename) throws MalformedURLException {
 
-        // 실제 로컬 경로
-        Path file = Paths.get("C:/uploads/images", email, filename);
+        // 프로필 이미지 경로 (설정에서 가져온 경로 사용)
+        Path file = Paths.get(profileUploadDir, email, filename);
 
         // 파일이 없으면 기본 이미지 사용
         if (!Files.exists(file)) {
-            file = Paths.get("C:/uploads/images/default-profile.png");
+            Path defaultImage = Paths.get(profileUploadDir, "default-profile.png");
+            if (Files.exists(defaultImage)) {
+                file = defaultImage;
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         }
 
         Resource resource = new UrlResource(file.toUri());
+        
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 파일 확장자에 따라 Content-Type 결정
+        String contentType = "image/png";
+        String lowerFilename = filename.toLowerCase();
+        if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        } else if (lowerFilename.endsWith(".gif")) {
+            contentType = "image/gif";
+        }
 
         // Content-Type 설정
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .header(HttpHeaders.CONTENT_TYPE, "image/png")
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .body(resource);
     }
 

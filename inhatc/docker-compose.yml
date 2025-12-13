@@ -10,6 +10,16 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/member?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=!Blackser7789
+      # 업로드 디렉토리 경로 (Docker 환경)
+      - UPLOAD_BASE_DIR=/app/uploads
+      - UPLOAD_POSTS_DIR=/app/uploads/posts
+      - UPLOAD_PROFILE_DIR=/app/uploads/static
+      - UPLOAD_MESSAGES_DIR=/app/uploads/static
+    volumes:
+      # 업로드된 이미지 파일 영구 저장 (호스트와 공유)
+      - ./uploads:/app/uploads
+      # static 리소스도 마운트 (기존 파일 유지)
+      - ./src/main/resources/static:/app/src/main/resources/static:ro
     depends_on:
       mysql:
         condition: service_healthy
