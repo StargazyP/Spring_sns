@@ -103,7 +103,7 @@ jobs:
 
       - name: Deploy via Webhook (Fast)
         run: |
-          echo "🚀 Webhook을 통한 즉각 배포 시도..."
+          echo "Webhook을 통한 즉각 배포 시도..."
           curl -X POST http://${{ secrets.SSH_HOST }}:3000/webhook \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: push" \

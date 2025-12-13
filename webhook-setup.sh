@@ -11,7 +11,7 @@ echo "=========================================="
 # 1. Node.js 설치 확인
 echo "1. Node.js 확인 중..."
 if ! command -v node &> /dev/null; then
-    echo "⚠️ Node.js가 설치되어 있지 않습니다. 설치 중..."
+    echo "Node.js가 설치되어 있지 않습니다. 설치 중..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
 fi
