@@ -31,6 +31,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     List<CommentEntity> findByPostIdWithWriter(@Param("postId") Long postId);
 
     // ✅ 페이징 지원: 특정 게시글의 댓글 조회 (페이징)
-    @EntityGraph(attributePaths = {"writer", "post"})
+    // @EntityGraph 제거: 페이징과 Collection fetch 충돌 방지
+    // @BatchSize로 N+1 문제 해결
     Page<CommentEntity> findByPostIdOrderByCreateDateDesc(Long postId, Pageable pageable);
 }

@@ -20,6 +20,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,6 +34,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Table(name = "post_entity")
+@BatchSize(size = 20)  // N+1 문제 해결을 위한 배치 크기 설정
 public class PostEntity {
 
     @Id
@@ -62,8 +64,9 @@ public class PostEntity {
     @Column(name = "member_email", nullable = false)
     private String memberEmail;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @OrderBy("id ASC")
+    @BatchSize(size = 20)  // Comments를 배치로 로딩하여 N+1 문제 해결
     private List<CommentEntity> comments = new ArrayList<>();
 
     @ManyToMany

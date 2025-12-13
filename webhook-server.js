@@ -47,23 +47,39 @@ app.post('/webhook', (req, res) => {
   if (event === 'push') {
     console.log('Push event received, updating Spring Boot container...');
     
-    // 여러 가능한 디렉토리 경로 시도
+    // 여러 가능한 디렉토리 경로 시도 (Git 저장소 경로와 Docker Compose 경로)
     const possiblePaths = [
-      '/home/jangdonggun/포트폴리오/Spring_sns',
-      '/home/jangdonggun/spring_sns_git/inhatc',
-      '/home/jangdonggun/포트폴리오/spring_sns_git/inhatc'
+      {
+        gitPath: '/home/jangdonggun/포트폴리오/spring_sns_git',
+        composePath: '/home/jangdonggun/포트폴리오/spring_sns_git/inhatc'
+      },
+      {
+        gitPath: '/home/jangdonggun/spring_sns_git',
+        composePath: '/home/jangdonggun/spring_sns_git/inhatc'
+      },
+      {
+        gitPath: '/home/jangdonggun/포트폴리오/Spring_sns',
+        composePath: '/home/jangdonggun/포트폴리오/Spring_sns'
+      }
     ];
     
     let deployCommand = '';
-    for (const path of possiblePaths) {
+    for (const paths of possiblePaths) {
       deployCommand += `
-        if [ -d "${path}" ]; then
-          cd "${path}" && 
-          echo "📂 Working directory: ${path}" &&
+        if [ -d "${paths.gitPath}" ] && [ -d "${paths.composePath}" ]; then
+          echo "📂 Git 저장소: ${paths.gitPath}" &&
+          echo "📂 Docker Compose 디렉토리: ${paths.composePath}" &&
+          cd "${paths.gitPath}" &&
+          echo "📥 최신 코드 가져오기..." &&
+          git fetch origin &&
+          git reset --hard origin/main &&
+          git pull origin main &&
+          echo "🐳 Docker 이미지 업데이트..." &&
+          cd "${paths.composePath}" &&
           docker compose pull app 2>/dev/null || docker-compose pull app 2>/dev/null || echo "⚠️ docker compose pull 실패" &&
           docker compose up -d --build 2>/dev/null || docker-compose up -d --build 2>/dev/null &&
           docker compose ps 2>/dev/null || docker-compose ps 2>/dev/null &&
-          echo "배포 완료!" &&
+          echo "✅ 배포 완료!" &&
           exit 0
         fi
       `;

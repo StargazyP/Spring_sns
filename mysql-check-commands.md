@@ -138,3 +138,4 @@ docker exec spring-sns-mysql mysql -u root -p'!Blackser7789' member -e "SELECT *
 2. **대소문자 구분**: MySQL은 기본적으로 대소문자를 구분하지 않지만, 테이블 이름은 확인 필요
 3. **데이터가 많은 경우**: `LIMIT`을 사용하여 일부만 확인하는 것이 좋습니다
 
+

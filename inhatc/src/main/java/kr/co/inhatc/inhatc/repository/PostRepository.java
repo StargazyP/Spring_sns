@@ -52,11 +52,13 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     List<PostEntity> findByMemberEmailsWithComments(@Param("emails") List<String> emails);
 
     // ✅ 페이징 지원: 삭제되지 않은 게시글 조회 (페이징)
-    @EntityGraph(attributePaths = {"comments"})
+    // @EntityGraph 제거: 페이징과 Collection fetch 충돌 방지
+    // @BatchSize로 N+1 문제 해결
     Page<PostEntity> findByDeleteYnOrderByCreatedDateDesc(char deleteYn, Pageable pageable);
 
     // ✅ 페이징 지원: 특정 이메일의 게시글 조회 (페이징)
-    @EntityGraph(attributePaths = {"comments"})
+    // @EntityGraph 제거: 페이징과 Collection fetch 충돌 방지
+    // @BatchSize로 N+1 문제 해결
     Page<PostEntity> findByMemberEmailOrderByIdDesc(String memberEmail, Pageable pageable);
 
 }
