@@ -101,7 +101,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to server via SSH
+      - name: Deploy via Webhook (Fast)
+        run: |
+          echo "🚀 Webhook을 통한 즉각 배포 시도..."
+          curl -X POST http://${{ secrets.SSH_HOST }}:3000/webhook \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -d '{"ref":"refs/heads/main","head_commit":{"id":"${{ github.sha }}"}}' \
+            --max-time 30 \
+            --connect-timeout 10 \
+            -f || (echo "⚠️ Webhook 호출 실패, SSH 배포로 대체합니다" && exit 1)
+
+      - name: Deploy to server via SSH (Fallback)
+        if: failure()
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
