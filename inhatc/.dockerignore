@@ -1,0 +1,15 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+.git
+.gitignore
+README.md
+*.md
+.idea
+.vscode
+*.log
+.DS_Store
+*.iml
+deploy/
+deploy.sh
+build.sh
+

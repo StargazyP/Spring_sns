@@ -18,7 +18,7 @@ app.use(express.json({
   verify: (req, res, buf) => {
     // 시크릿이 설정되지 않았으면 검증 건너뛰기
     if (SECRET === 'your_webhook_secret_here') {
-      console.log('⚠️ Webhook secret이 설정되지 않았습니다. 검증을 건너뜁니다.');
+      console.log('Webhook secret이 설정되지 않았습니다. 검증을 건너뜁니다.');
       return;
     }
     

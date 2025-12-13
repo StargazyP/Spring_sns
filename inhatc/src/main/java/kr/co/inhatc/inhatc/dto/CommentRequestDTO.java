@@ -5,12 +5,16 @@ import java.time.LocalDateTime;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class CommentRequestDTO {
     private Long id;
@@ -21,9 +25,6 @@ public class CommentRequestDTO {
 
     @Builder.Default
     private LocalDateTime createdDate = LocalDateTime.now();
-
-    // @Builder.Default
-    // private LocalDateTime modifiedDate = LocalDateTime.now();
 
     @NotBlank(message = "사용자 이메일은 필수입니다.")
     private String user;
@@ -38,9 +39,9 @@ public class CommentRequestDTO {
         return CommentRequestDTO.builder()
                 .comment(comment)
                 .createdDate(createdDate)
-                // .modifiedDate(modifiedDate)
                 .user(user)
                 .article(article)
+                .parentCommentId(parentCommentId)
                 .build();
     }
 }

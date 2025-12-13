@@ -17,13 +17,6 @@ SyslogIdentifier=inhatc
 
 # 환경 변수 설정
 Environment="JAVA_HOME=/usr/lib/jvm/default-java"
-
-# 데이터베이스 연결 정보 (보안상 필수)
-Environment="DB_URL=jdbc:mysql://localhost:3306/member?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul"
-Environment="DB_USERNAME=your_database_username"
-Environment="DB_PASSWORD=your_secure_database_password"
-
-# 파일 업로드 경로
 Environment="UPLOAD_BASE_DIR=DEPLOY_PATH/uploads"
 Environment="UPLOAD_POSTS_DIR=DEPLOY_PATH/uploads/posts"
 Environment="UPLOAD_PROFILE_DIR=DEPLOY_PATH/uploads/profiles"
