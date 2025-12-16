@@ -32,10 +32,41 @@ build/
 ### VS Code ###
 .vscode/
 
+# ============================================
 # User-uploaded media (profile & post images)
+# ============================================
+
+# 업로드 디렉토리 전체 제외 (Docker 볼륨 마운트용)
+# 이 디렉토리는 호스트에 영구 저장되므로 Git에 포함하지 않음
+uploads/
+uploads/**
+
+# 사용자별 업로드 이미지 파일 (이메일 형식 폴더)
+# 예: test@naver.com/, user@example.com/
 src/main/resources/**/*@*
 src/main/resources/**/*@*/**
+src/main/resources/static/**/*@*
+src/main/resources/static/**/*@*/**
+
+# 메시지 이미지 디렉토리
 src/main/resources/static/**/messages/**
 
+# 타임스탬프가 포함된 업로드 이미지 파일 (게시물 이미지)
+# 예: 20251213191915833.png, 20251213191718375.png
+src/main/resources/**/*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].png
+src/main/resources/**/*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jpg
+src/main/resources/**/*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jpeg
+src/main/resources/**/*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].gif
+
+# 사용자 업로드 프로필 이미지 (기본 이미지 제외)
+# 기본 이미지는 유지: src/main/resources/static/images/default-profile.png
+src/main/resources/static/**/profile.png
+src/main/resources/static/**/profile.jpg
+src/main/resources/static/**/profile.jpeg
+# 단, 기본 이미지는 예외 처리
+!src/main/resources/static/images/default-profile.png
+
+# ============================================
 # 프로덕션 설정 파일 (민감한 정보 포함)
+# ============================================
 src/main/resources/application-prod.properties
