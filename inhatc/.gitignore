@@ -70,3 +70,12 @@ src/main/resources/static/**/profile.jpeg
 # 프로덕션 설정 파일 (민감한 정보 포함)
 # ============================================
 src/main/resources/application-prod.properties
+
+# ============================================
+# 문서 파일 (MD 파일 - README.md 제외)
+# ============================================
+# 임시 문서 파일 제외 (README.md는 유지)
+*.md
+!README.md
+!.github/workflows/README.md
+!inhatc/HELP.md

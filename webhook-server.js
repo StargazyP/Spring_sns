@@ -72,8 +72,19 @@ app.post('/webhook', (req, res) => {
           cd "${paths.gitPath}" &&
           echo "📥 최신 코드 가져오기..." &&
           git fetch origin &&
-          git reset --hard origin/main &&
-          git pull origin main &&
+          # 안전한 병합: 로컬 변경사항 보존
+          git stash || true &&
+          git merge origin/main || {
+            echo "병합 충돌 발생, rebase 시도..." &&
+            git merge --abort 2>/dev/null || true &&
+            git rebase origin/main || {
+              echo "병합 실패, 현재 상태 유지" &&
+              git rebase --abort 2>/dev/null || true &&
+              exit 1
+            }
+          } &&
+          # stash한 변경사항 복원 (이미지 파일 등)
+          git stash pop || true &&
           echo "🐳 Docker 이미지 업데이트..." &&
           cd "${paths.composePath}" &&
           docker compose pull app 2>/dev/null || docker-compose pull app 2>/dev/null || echo "⚠️ docker compose pull 실패" &&
