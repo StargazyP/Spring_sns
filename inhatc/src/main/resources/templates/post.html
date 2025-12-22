@@ -502,6 +502,7 @@
         transition: color 0.2s;
         font-weight: 400;
         margin-top: 4px;
+        align-self: flex-start;
       }
 
       .view-replies-button:hover {
@@ -1264,7 +1265,14 @@
         };
         actionsDiv.appendChild(replyIconButton);
         
-        // 답글 보기 버튼 (대댓글이 있을 때만) - Twitter/X 스타일
+        // 답글 작성 폼
+        const replyForm = createReplyForm(comment.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        
+        // 답글 보기 버튼 (대댓글이 있을 때만) - actionsDiv 다음에 배치
         if (comment.replies && comment.replies.length > 0) {
           const viewRepliesButton = document.createElement("button");
           viewRepliesButton.className = "view-replies-button";
@@ -1273,16 +1281,9 @@
             e.stopPropagation();
             await toggleRepliesThread(comment.id, comment.replies);
           };
-          // actionsDiv가 아닌 contentDiv에 추가 (Twitter/X 스타일)
           contentDiv.appendChild(viewRepliesButton);
         }
         
-        // 답글 작성 폼
-        const replyForm = createReplyForm(comment.id);
-        
-        contentDiv.appendChild(authorDiv);
-        contentDiv.appendChild(textP);
-        contentDiv.appendChild(actionsDiv);
         contentDiv.appendChild(replyForm);
 
         commentDiv.appendChild(img);
@@ -1333,9 +1334,23 @@
         
         // 대댓글이 아직 렌더링되지 않은 경우
         if (repliesContainer.children.length === 0) {
+          // 대댓글을 시간 순서대로 정렬 (오래된 것부터)
+          const sortedReplies = [...replies].sort((a, b) => {
+            const dateA = a.createDate ? new Date(a.createDate).getTime() : 0;
+            const dateB = b.createDate ? new Date(b.createDate).getTime() : 0;
+            return dateA - dateB;
+          });
+          
           // 재귀적으로 모든 depth의 replies 렌더링
           function renderRepliesRecursive(container, replies, parentId) {
-            replies.forEach((reply) => {
+            // 대댓글을 시간 순서대로 정렬 (오래된 것부터)
+            const sortedReplies = [...replies].sort((a, b) => {
+              const dateA = a.createDate ? new Date(a.createDate).getTime() : 0;
+              const dateB = b.createDate ? new Date(b.createDate).getTime() : 0;
+              return dateA - dateB;
+            });
+            
+            sortedReplies.forEach((reply) => {
               const replyDiv = document.createElement("div");
               replyDiv.className = "comment comment-reply";
               replyDiv.setAttribute("data-comment-id", reply.id);
@@ -1381,14 +1396,19 @@
               
               container.appendChild(replyDiv);
               
-              // 재귀적으로 답글의 답글도 렌더링
+              // 재귀적으로 답글의 답글도 렌더링 (정렬된 순서로)
               if (reply.replies && reply.replies.length > 0) {
-                renderRepliesRecursive(container, reply.replies, reply.id);
+                const sortedNestedReplies = [...reply.replies].sort((a, b) => {
+                  const dateA = a.createDate ? new Date(a.createDate).getTime() : 0;
+                  const dateB = b.createDate ? new Date(b.createDate).getTime() : 0;
+                  return dateA - dateB;
+                });
+                renderRepliesRecursive(container, sortedNestedReplies, reply.id);
               }
             });
           }
           
-          renderRepliesRecursive(repliesContainer, replies, commentId);
+          renderRepliesRecursive(repliesContainer, sortedReplies, commentId);
         }
       }
 
