@@ -233,11 +233,18 @@
         margin-bottom: 16px;
       }
 
+      /* Twitter/X 스타일 댓글 article */
       .comment {
-        padding: 12px 0;
+        padding: 12px 16px;
         border-bottom: 1px solid #eff3f4;
         display: flex;
         gap: 12px;
+        transition: background-color 0.2s;
+        position: relative;
+      }
+
+      .comment:hover {
+        background-color: rgba(0, 0, 0, 0.03);
       }
 
       .comment:last-child {
@@ -383,44 +390,88 @@
       .comment .profile-img {
         width: 40px;
         height: 40px;
+        flex-shrink: 0;
       }
 
       .comment-content {
         flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
 
+      /* Twitter/X 스타일 작성자 정보 */
       .comment-author {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         font-weight: 700;
         color: #0f1419;
-        margin-bottom: 4px;
+        font-size: 15px;
+        line-height: 20px;
+      }
+
+      .comment-author-name {
+        font-weight: 700;
+        color: #0f1419;
+      }
+
+      .comment-author-username {
+        color: #536471;
+        font-weight: 400;
+      }
+
+      .comment-time {
+        color: #536471;
+        font-size: 15px;
+        margin-left: 4px;
+      }
+
+      .comment-time::before {
+        content: '·';
+        margin-right: 4px;
       }
 
       .comment-text {
         font-size: 15px;
         color: #0f1419;
         margin: 0;
+        line-height: 20px;
+        word-wrap: break-word;
+        white-space: pre-wrap;
       }
 
       .comment-actions {
         display: flex;
+        align-items: center;
         gap: 12px;
-        margin-top: 8px;
+        margin-top: 4px;
+        padding-top: 4px;
       }
 
+      /* Twitter/X 스타일 답글 버튼 */
       .reply-button {
         background-color: transparent;
         border: none;
         color: #536471;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: color 0.2s;
+        font-weight: 400;
       }
 
       .reply-button:hover {
-        background-color: #f7f9f9;
-        color: #0f1419;
+        color: #1d9bf0;
+      }
+
+      .reply-button svg {
+        width: 18px;
+        height: 18px;
       }
 
       .reply-text-button {
@@ -440,20 +491,22 @@
         color: #0f1419;
       }
 
-      /* 답글 보기 버튼 */
+      /* Twitter/X 스타일 답글 보기 버튼 */
       .view-replies-button {
         background-color: transparent;
         border: none;
         color: #1d9bf0;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        padding: 0;
+        transition: color 0.2s;
+        font-weight: 400;
+        margin-top: 4px;
       }
 
       .view-replies-button:hover {
-        background-color: #e0f2ff;
+        color: #1a8cd8;
+        text-decoration: underline;
       }
 
       /* Thread View 버튼 */
@@ -472,48 +525,22 @@
         background-color: #e0f2ff;
       }
 
-      /* 답글 들여쓰기 */
-      .comment-reply {
-        border-left: 2px solid #eff3f4;
-        padding-left: 12px;
-        margin-top: 8px;
-      }
-
-      /* 답글 컨테이너 */
-      .comment-replies-container {
-        margin-top: 8px;
-      }
-
-      /* 스레드 형식 답글 */
-      .comment-thread {
-        position: relative;
-        margin-top: 12px;
-        margin-left: 0;
-        padding-left: 0;
-        width: 100%;
-      }
-
-      .comment-thread::before {
-        content: '';
-        position: absolute;
-        left: 20px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background-color: #eff3f4;
-        z-index: 0;
-      }
-
+      /* Twitter/X 스타일 대댓글 구조 */
       .comment-reply {
         position: relative;
-        margin-top: 12px;
+        margin-top: 0;
         margin-left: 0;
         padding-left: 0;
         display: flex;
         gap: 12px;
-        padding: 12px 0;
+        padding: 12px 16px;
         border-bottom: 1px solid #eff3f4;
         width: 100%;
+        transition: background-color 0.2s;
+      }
+
+      .comment-reply:hover {
+        background-color: rgba(0, 0, 0, 0.03);
       }
 
       .comment-reply:last-child {
@@ -526,11 +553,42 @@
         flex-shrink: 0;
       }
 
+      /* 답글 컨테이너 */
+      .comment-replies-container {
+        margin-top: 0;
+      }
+
+      /* Twitter/X 스타일 스레드 형식 답글 */
+      .comment-thread {
+        position: relative;
+        margin-top: 0;
+        margin-left: 0;
+        padding-left: 0;
+        width: 100%;
+      }
+
+      /* 스레드 연결선 (Twitter/X 스타일) */
+      .comment-thread::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #eff3f4;
+        z-index: 0;
+      }
+
+      .comment-thread:last-child::before {
+        display: none;
+      }
+
+      /* 대댓글 연결선 (프로필 이미지 위치에서 시작) */
       .comment-reply::before {
         content: '';
         position: absolute;
         left: 20px;
-        top: 20px;
+        top: 52px;
         width: 20px;
         height: 2px;
         background-color: #eff3f4;
@@ -1196,17 +1254,17 @@
         const actionsDiv = document.createElement("div");
         actionsDiv.className = "comment-actions";
         
-        // 답글 아이콘 버튼
+        // Twitter/X 스타일 답글 아이콘 버튼
         const replyIconButton = document.createElement("button");
         replyIconButton.className = "reply-button";
-        replyIconButton.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
         replyIconButton.onclick = function(e) {
           e.stopPropagation();
           toggleReplyForm(comment.id);
         };
         actionsDiv.appendChild(replyIconButton);
         
-        // 답글 보기 버튼 (대댓글이 있을 때만)
+        // 답글 보기 버튼 (대댓글이 있을 때만) - Twitter/X 스타일
         if (comment.replies && comment.replies.length > 0) {
           const viewRepliesButton = document.createElement("button");
           viewRepliesButton.className = "view-replies-button";
@@ -1215,7 +1273,8 @@
             e.stopPropagation();
             await toggleRepliesThread(comment.id, comment.replies);
           };
-          actionsDiv.appendChild(viewRepliesButton);
+          // actionsDiv가 아닌 contentDiv에 추가 (Twitter/X 스타일)
+          contentDiv.appendChild(viewRepliesButton);
         }
         
         // 답글 작성 폼
@@ -1292,9 +1351,21 @@
               const replyContentDiv = document.createElement("div");
               replyContentDiv.className = "comment-content";
               
+              // Twitter/X 스타일 작성자 정보
               const replyAuthorDiv = document.createElement("div");
               replyAuthorDiv.className = "comment-author";
-              replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyAuthorNameSpan = document.createElement("span");
+              replyAuthorNameSpan.className = "comment-author-name";
+              replyAuthorNameSpan.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyTimeSpan = document.createElement("span");
+              replyTimeSpan.className = "comment-time";
+              const replyCreatedDate = reply.createDate ? new Date(reply.createDate) : new Date();
+              replyTimeSpan.textContent = getTimeAgo(replyCreatedDate);
+              
+              replyAuthorDiv.appendChild(replyAuthorNameSpan);
+              replyAuthorDiv.appendChild(replyTimeSpan);
               
               const replyTextP = document.createElement("p");
               replyTextP.className = "comment-text";
@@ -1420,9 +1491,21 @@
             const replyContentDiv = document.createElement("div");
             replyContentDiv.className = "comment-content";
             
+            // Twitter/X 스타일 작성자 정보
             const replyAuthorDiv = document.createElement("div");
             replyAuthorDiv.className = "comment-author";
-            replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyAuthorNameSpan = document.createElement("span");
+            replyAuthorNameSpan.className = "comment-author-name";
+            replyAuthorNameSpan.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyTimeSpan = document.createElement("span");
+            replyTimeSpan.className = "comment-time";
+            const replyCreatedDate = reply.createDate ? new Date(reply.createDate) : new Date();
+            replyTimeSpan.textContent = getTimeAgo(replyCreatedDate);
+            
+            replyAuthorDiv.appendChild(replyAuthorNameSpan);
+            replyAuthorDiv.appendChild(replyTimeSpan);
             
             const replyTextP = document.createElement("p");
             replyTextP.className = "comment-text";
@@ -1433,7 +1516,7 @@
             
             const replyIconBtn = document.createElement("button");
             replyIconBtn.className = "reply-button";
-            replyIconBtn.innerHTML = `<svg class="reply-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+            replyIconBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
             replyIconBtn.onclick = function(e) {
               e.stopPropagation();
               toggleReplyForm(reply.id);
@@ -1524,9 +1607,21 @@
               const replyContentDiv = document.createElement("div");
               replyContentDiv.className = "comment-content";
               
+              // Twitter/X 스타일 작성자 정보
               const replyAuthorDiv = document.createElement("div");
               replyAuthorDiv.className = "comment-author";
-              replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyAuthorNameSpan = document.createElement("span");
+              replyAuthorNameSpan.className = "comment-author-name";
+              replyAuthorNameSpan.textContent = reply.writerName || "(이름 없음)";
+              
+              const replyTimeSpan = document.createElement("span");
+              replyTimeSpan.className = "comment-time";
+              const replyCreatedDate = reply.createDate ? new Date(reply.createDate) : new Date();
+              replyTimeSpan.textContent = getTimeAgo(replyCreatedDate);
+              
+              replyAuthorDiv.appendChild(replyAuthorNameSpan);
+              replyAuthorDiv.appendChild(replyTimeSpan);
               
               const replyTextP = document.createElement("p");
               replyTextP.className = "comment-text";
@@ -1597,9 +1692,21 @@
             const replyContentDiv = document.createElement("div");
             replyContentDiv.className = "comment-content";
             
+            // Twitter/X 스타일 작성자 정보
             const replyAuthorDiv = document.createElement("div");
             replyAuthorDiv.className = "comment-author";
-            replyAuthorDiv.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyAuthorNameSpan = document.createElement("span");
+            replyAuthorNameSpan.className = "comment-author-name";
+            replyAuthorNameSpan.textContent = reply.writerName || "(이름 없음)";
+            
+            const replyTimeSpan = document.createElement("span");
+            replyTimeSpan.className = "comment-time";
+            const replyCreatedDate = reply.createDate ? new Date(reply.createDate) : new Date();
+            replyTimeSpan.textContent = getTimeAgo(replyCreatedDate);
+            
+            replyAuthorDiv.appendChild(replyAuthorNameSpan);
+            replyAuthorDiv.appendChild(replyTimeSpan);
             
             const replyTextP = document.createElement("p");
             replyTextP.className = "comment-text";
@@ -2292,6 +2399,23 @@
           console.error("답글 작성 오류:", error);
           alert("답글 저장 중 오류가 발생했습니다.");
         }
+      }
+
+      // 시간 표시 함수 (Twitter/X 스타일)
+      function getTimeAgo(date) {
+        const now = new Date();
+        const diff = now - date;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        if (seconds < 60) return '방금';
+        if (minutes < 60) return `${minutes}분`;
+        if (hours < 24) return `${hours}시간`;
+        if (days < 7) return `${days}일`;
+        
+        return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
       }
 
       // 댓글 작성
