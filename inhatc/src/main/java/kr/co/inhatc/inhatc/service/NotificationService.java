@@ -26,7 +26,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate; // 12-23 WebSocket 실시간 알림 전송을 위해 추가
 
     /**
      * 알림 생성 (좋아요)
@@ -56,7 +56,7 @@ public class NotificationService {
 
             NotificationEntity savedNotification = notificationRepository.save(notification);
             
-            // 실시간 알림 전송 (WebSocket)
+            // 12-23 실시간 알림 전송 (WebSocket)
             sendNotificationToUser(post.getMemberEmail(), savedNotification);
         }
     }
@@ -82,7 +82,7 @@ public class NotificationService {
         
         NotificationEntity savedNotification = notificationRepository.save(notification);
         
-        // 실시간 알림 전송 (WebSocket)
+        // 12-23 실시간 알림 전송 (WebSocket)
         sendNotificationToUser(post.getMemberEmail(), savedNotification);
     }
 
@@ -132,12 +132,13 @@ public class NotificationService {
         notifications.forEach(NotificationEntity::markAsRead);
         notificationRepository.saveAll(notifications);
         
-        // 실시간으로 알림 수 업데이트 전송
+        // 12-23 실시간으로 알림 수 업데이트 전송
         sendNotificationCount(recipientEmail);
     }
     
     /**
      * WebSocket을 통해 특정 사용자에게 알림 전송
+     * 12-23 실시간 알림 기능 추가
      */
     private void sendNotificationToUser(String recipientEmail, NotificationEntity notification) {
         try {
@@ -164,6 +165,7 @@ public class NotificationService {
     
     /**
      * WebSocket을 통해 알림 수 전송
+     * 12-23 실시간 알림 수 업데이트 기능 추가
      */
     private void sendNotificationCount(String recipientEmail) {
         try {
@@ -182,6 +184,7 @@ public class NotificationService {
     
     /**
      * 알림 읽음 처리 시 알림 수 업데이트
+     * 12-23 WebSocket을 통한 실시간 알림 수 업데이트 추가
      */
     public void markAsRead(Long notificationId) {
         NotificationEntity notification = notificationRepository.findById(notificationId)
@@ -189,7 +192,7 @@ public class NotificationService {
         notification.markAsRead();
         notificationRepository.save(notification);
         
-        // 실시간으로 알림 수 업데이트 전송
+        // 12-23 실시간으로 알림 수 업데이트 전송
         sendNotificationCount(notification.getRecipientEmail());
     }
 }

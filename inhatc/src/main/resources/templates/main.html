@@ -88,7 +88,7 @@
         position: relative;
       }
       
-      /* 알림 배지 스타일 */
+      /* 12-23 알림 배지 스타일 (실시간 알림 수 표시) */
       .notification-badge {
         position: absolute;
         top: 8px;
@@ -678,7 +678,7 @@
           onclick="location.href='/chat/message';"
         />
 
-        <!-- 알람 / 게시물 확인: /posts/notifications/page -->
+        <!-- 12-23 알람 / 게시물 확인: /posts/notifications/page (실시간 알림 수 배지 포함) -->
         <div class="notification-icon-container">
           <img
             src="/images/alram.png"
@@ -786,7 +786,7 @@
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script type="text/javascript">
       // =====================================================
-      // WebSocket 연결 및 알림 수신
+      // 12-23 WebSocket 연결 및 알림 수신 (실시간 알림 기능)
       // =====================================================
       let stompClient = null;
       let currentUserEmail = null;
@@ -807,20 +807,20 @@
           // 이메일을 URL-safe하게 변환
           const emailPath = email.replace('@', '_').replace(/\./g, '_');
           
-          // 알림 수 구독
+          // 12-23 알림 수 구독
           stompClient.subscribe('/topic/notifications/count/' + emailPath, function(message) {
             const count = parseInt(JSON.parse(message.body));
             updateNotificationBadge(count);
           });
           
-          // 알림 상세 정보 구독 (선택적, 필요시 사용)
+          // 12-23 알림 상세 정보 구독 (선택적, 필요시 사용)
           stompClient.subscribe('/topic/notifications/' + emailPath, function(message) {
             const notification = JSON.parse(message.body);
             console.log('새 알림 수신:', notification);
             // 필요시 알림 상세 정보를 처리할 수 있음
           });
           
-          // 초기 알림 수 조회
+          // 12-23 초기 알림 수 조회
           fetchNotificationCount();
         }, function(error) {
           console.error('WebSocket 연결 오류:', error);
@@ -845,6 +845,7 @@
         disconnectWebSocket();
       });
       
+      // 12-23 알림 배지 업데이트 함수
       function updateNotificationBadge(count) {
         const badge = document.getElementById('notificationBadge');
         if (badge) {
@@ -857,6 +858,7 @@
         }
       }
       
+      // 12-23 알림 수 조회 함수
       async function fetchNotificationCount() {
         try {
           const response = await fetch('/posts/notifications');

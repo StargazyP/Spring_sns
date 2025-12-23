@@ -106,6 +106,45 @@
       .navbar img[src="/images/alram.png"] {
         width: 61px;
         height: 52px;
+        position: relative;
+      }
+      
+      /* 12-23 알림 배지 스타일 (실시간 알림 수 표시) */
+      .notification-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: #ef4444;
+        color: white;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 0 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 101;
+        opacity: 0;
+        transform: scale(0);
+        transition: opacity 0.3s, transform 0.3s;
+      }
+      
+      .notification-badge.show {
+        opacity: 1;
+        transform: scale(1);
+      }
+      
+      /* 12-23 알림 아이콘 컨테이너 */
+      .notification-icon-container {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .notification-icon-container img {
+        cursor: pointer;
       }
 
       .navbar img[src="/images/logout.png"] {
@@ -224,11 +263,16 @@
             alt="Message"
             onclick="location.href='/chat/message';"
           />
-          <img
-            src="/images/alram.png"
-            alt="Alarm"
-            onclick="location.href='/posts/notifications/page';"
-          />
+          <!-- 12-23 알람 아이콘 (실시간 알림 수 배지 포함) -->
+          <div class="notification-icon-container">
+            <img
+              src="/images/alram.png"
+              alt="Alarm"
+              onclick="location.href='/posts/notifications/page';"
+              id="notificationIcon"
+            />
+            <span id="notificationBadge" class="notification-badge">0</span>
+          </div>
           <img
             src="/images/logout.png"
             alt="Logout"
@@ -244,9 +288,107 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script type="text/javascript">
+      // =====================================================
+      // 12-23 WebSocket 연결 및 알림 수 수신 (실시간 알림 기능)
+      // =====================================================
+      let stompClient = null;
+      let currentUserEmail = null;
+      
+      function connectWebSocket(email) {
+        if (!email) {
+          console.warn("이메일이 없어 WebSocket 연결을 건너뜁니다.");
+          return;
+        }
+        
+        currentUserEmail = email;
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        
+        stompClient.connect({}, function(frame) {
+          console.log('WebSocket 연결됨: ' + frame);
+          
+          // 이메일을 URL-safe하게 변환
+          const emailPath = email.replace('@', '_').replace(/\./g, '_');
+          
+          // 12-23 알림 수 구독
+          stompClient.subscribe('/topic/notifications/count/' + emailPath, function(message) {
+            const count = parseInt(JSON.parse(message.body));
+            console.log('알림 수 업데이트:', count);
+            updateNotificationBadge(count);
+          });
+          
+          // 12-23 초기 알림 수 조회
+          fetchNotificationCount();
+        }, function(error) {
+          console.error('WebSocket 연결 오류:', error);
+        });
+      }
+      
+      function disconnectWebSocket() {
+        if (stompClient !== null) {
+          stompClient.disconnect();
+          console.log('WebSocket 연결 종료');
+        }
+      }
+      
+      // 페이지를 떠날 때 WebSocket 연결 종료
+      window.addEventListener('beforeunload', function() {
+        disconnectWebSocket();
+      });
+      
+      // 현재 사용자 이메일 가져오기
+      async function getCurrentUserEmail() {
+        try {
+          const response = await fetch("/api/members/session", {
+            credentials: "include"
+          });
+          if (response.ok) {
+            const data = await response.json();
+            return data.loginEmail;
+          }
+        } catch (error) {
+          console.error("사용자 이메일 가져오기 실패:", error);
+        }
+        return null;
+      }
+      
+      // 12-23 알림 배지 업데이트 함수
+      function updateNotificationBadge(count) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+          if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count.toString();
+            badge.classList.add('show');
+          } else {
+            badge.classList.remove('show');
+          }
+        }
+      }
+      
+      // 12-23 알림 수 조회 함수
+      async function fetchNotificationCount() {
+        try {
+          const response = await fetch('/posts/notifications', {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const notifications = await response.json();
+            updateNotificationBadge(notifications.length);
+          }
+        } catch (error) {
+          console.error('알림 수 조회 실패:', error);
+        }
+      }
+
       // 페이지 로드 시 알림 정보 가져오기
       window.onload = async function () {
+        const email = await getCurrentUserEmail();
+        if (email) {
+          connectWebSocket(email);
+        }
         await loadNotifications();
       };
 
@@ -255,7 +397,7 @@
         window.history.back();
       }
 
-      // 알림 로드
+      // 12-23 알림 로드 함수
       async function loadNotifications() {
         const container = document.getElementById("notificationsContainer");
         
@@ -277,13 +419,17 @@
 
           const notifications = await response.json();
           renderNotifications(notifications);
+          
+          // 12-23 읽지 않은 알림 수 업데이트
+          const unreadCount = notifications.filter(n => !n.isRead).length;
+          updateNotificationBadge(unreadCount);
         } catch (error) {
           console.error("알림 로드 오류:", error);
           container.innerHTML = "<div class='error'>알림을 불러올 수 없습니다.</div>";
         }
       }
 
-      // 알림 렌더링
+      // 12-23 알림 렌더링 함수
       function renderNotifications(notifications) {
         const container = document.getElementById("notificationsContainer");
         
@@ -315,11 +461,36 @@
             <div class="notification-date">${date}</div>
           `;
           
-          item.onclick = function() {
-            // 알림 읽음 처리
-            fetch(`/posts/notifications/read?notificationId=${notification.id}`, {
-              method: 'POST'
-            });
+          // 12-23 알림 클릭 시 읽음 처리 및 게시물 페이지로 이동
+          item.onclick = async function(event) {
+            event.preventDefault();
+            
+            // 이미 읽은 알림이면 바로 이동
+            if (notification.isRead) {
+              window.location.href = `/posts/${notification.postId}`;
+              return;
+            }
+            
+            // 12-23 읽지 않은 알림만 읽음 처리
+            try {
+              const response = await fetch(`/posts/notifications/read?notificationId=${notification.id}`, {
+                method: 'POST',
+                credentials: 'include'
+              });
+              
+              if (response.ok) {
+                console.log('알림 읽음 처리 완료:', notification.id);
+                // 12-23 읽음 처리된 알림의 스타일 업데이트
+                item.className = 'notification-item read';
+                // 알림 목록에서 해당 알림의 isRead 상태 업데이트
+                notification.isRead = true;
+              } else {
+                console.error('알림 읽음 처리 실패:', response.status);
+              }
+            } catch (error) {
+              console.error('알림 읽음 처리 오류:', error);
+            }
+            
             // 게시물 상세 페이지로 이동
             window.location.href = `/posts/${notification.postId}`;
           };
