@@ -85,6 +85,44 @@
       .navbar img[src="/images/alram.png"] {
         width: 61px;
         height: 52px;
+        position: relative;
+      }
+      
+      /* 알림 배지 스타일 */
+      .notification-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: #ef4444;
+        color: white;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 0 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 101;
+        opacity: 0;
+        transform: scale(0);
+        transition: opacity 0.3s, transform 0.3s;
+      }
+      
+      .notification-badge.show {
+        opacity: 1;
+        transform: scale(1);
+      }
+      
+      .notification-icon-container {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .notification-icon-container img {
+        cursor: pointer;
       }
 
       /* logout.png - 30% 증가 */
@@ -641,12 +679,15 @@
         />
 
         <!-- 알람 / 게시물 확인: /posts/notifications/page -->
-        <img
-          src="/images/alram.png"
-          alt="Alarm"
-          onclick="location.href='/posts/notifications/page';"
-          id="notificationIcon"
-        />
+        <div class="notification-icon-container">
+          <img
+            src="/images/alram.png"
+            alt="Alarm"
+            onclick="location.href='/posts/notifications/page';"
+            id="notificationIcon"
+          />
+          <span id="notificationBadge" class="notification-badge">0</span>
+        </div>
 
         <!-- 로그아웃: /member/logout 대신 /api/logout -->
         <img
@@ -741,18 +782,104 @@
         <!-- </ul>
       </div>
     </div> --> 
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script type="text/javascript">
       // =====================================================
-      // ✅ 초기 실행
+      // WebSocket 연결 및 알림 수신
+      // =====================================================
+      let stompClient = null;
+      let currentUserEmail = null;
+      
+      function connectWebSocket(email) {
+        if (!email) {
+          console.warn("이메일이 없어 WebSocket 연결을 건너뜁니다.");
+          return;
+        }
+        
+        currentUserEmail = email;
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        
+        stompClient.connect({}, function(frame) {
+          console.log('WebSocket 연결됨: ' + frame);
+          
+          // 이메일을 URL-safe하게 변환
+          const emailPath = email.replace('@', '_').replace(/\./g, '_');
+          
+          // 알림 수 구독
+          stompClient.subscribe('/topic/notifications/count/' + emailPath, function(message) {
+            const count = parseInt(JSON.parse(message.body));
+            updateNotificationBadge(count);
+          });
+          
+          // 알림 상세 정보 구독 (선택적, 필요시 사용)
+          stompClient.subscribe('/topic/notifications/' + emailPath, function(message) {
+            const notification = JSON.parse(message.body);
+            console.log('새 알림 수신:', notification);
+            // 필요시 알림 상세 정보를 처리할 수 있음
+          });
+          
+          // 초기 알림 수 조회
+          fetchNotificationCount();
+        }, function(error) {
+          console.error('WebSocket 연결 오류:', error);
+          // 재연결 시도 (5초 후)
+          setTimeout(function() {
+            if (currentUserEmail) {
+              connectWebSocket(currentUserEmail);
+            }
+          }, 5000);
+        });
+      }
+      
+      function disconnectWebSocket() {
+        if (stompClient !== null) {
+          stompClient.disconnect();
+          console.log('WebSocket 연결 종료');
+        }
+      }
+      
+      // 페이지를 떠날 때 WebSocket 연결 종료
+      window.addEventListener('beforeunload', function() {
+        disconnectWebSocket();
+      });
+      
+      function updateNotificationBadge(count) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+          if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count.toString();
+            badge.classList.add('show');
+          } else {
+            badge.classList.remove('show');
+          }
+        }
+      }
+      
+      async function fetchNotificationCount() {
+        try {
+          const response = await fetch('/posts/notifications');
+          if (response.ok) {
+            const notifications = await response.json();
+            updateNotificationBadge(notifications.length);
+          }
+        } catch (error) {
+          console.error('알림 수 조회 실패:', error);
+        }
+      }
+      
+      // =====================================================
+      // 초기 실행
       // =====================================================
       window.onload = async function () {
-        console.log("🚀 [window.onload] 페이지 로드 시작");
+        console.log("[window.onload] 페이지 로드 시작");
 
         try {
-          console.log("🔄 세션 이메일 정보 요청 중...");
-          await fetchMemberEmail(); // 세션 정보 가져오기
+          console.log("세션 이메일 정보 요청 중...");
+          await fetchMemberEmail(); // 세션 정보 가져오기 (내부에서 WebSocket 연결됨)
 
-          console.log("🧾 게시물 목록 불러오기 시작...");
+          console.log("게시물 목록 불러오기 시작...");
           await fetchPosts(); // 게시물 로드
 
           // console.log("💬 메시지 로드 시작...");
@@ -763,35 +890,35 @@
           const userBox = document.getElementById("user-box");
           if (chatBox) {
             chatBox.style.display = "none";
-            console.log("📦 chat-box 초기 숨김 완료");
+            console.log("chat-box 초기 숨김 완료");
           }
           if (userBox) {
             userBox.style.display = "none";
-            console.log("📦 user-box 초기 숨김 완료");
+            console.log("user-box 초기 숨김 완료");
           }
           
           // URL 파라미터에서 postId 확인 (알림에서 클릭한 경우)
           const urlParams = new URLSearchParams(window.location.search);
           const postId = urlParams.get('postId');
           if (postId) {
-            console.log("🔔 알림에서 게시물 클릭됨, postId:", postId);
+            console.log("알림에서 게시물 클릭됨, postId:", postId);
             // 게시물 상세 페이지로 이동
             window.location.href = `/posts/${postId}`;
           }
         } catch (error) {
-          console.error("💥 window.onload 중 에러 발생:", error);
+          console.error(" window.onload 중 에러 발생:", error);
         }
 
-        console.log("✅ [window.onload] 초기화 완료");
+        console.log("[window.onload] 초기화 완료");
       };
 
       // =====================================================
-      // ✅ UI 토글 이벤트 (요소가 존재하는 경우에만)
+      //  UI 토글 이벤트 (요소가 존재하는 경우에만)
       // =====================================================
       const toggleChat = document.getElementById("toggle-chat");
       if (toggleChat) {
         toggleChat.addEventListener("click", function () {
-          console.log("💬 [UI] 채팅창 토글 클릭됨");
+          console.log(" [UI] 채팅창 토글 클릭됨");
           toggleVisibility("chat-box");
         });
       }
@@ -799,7 +926,7 @@
       const toggleUser = document.getElementById("toggle-user");
       if (toggleUser) {
         toggleUser.addEventListener("click", function () {
-          console.log("👥 [UI] 사용자 목록 토글 클릭됨");
+          console.log(" [UI] 사용자 목록 토글 클릭됨");
           toggleVisibility("user-box");
         });
       }
@@ -807,7 +934,7 @@
       function toggleVisibility(id) {
         const element = document.getElementById(id);
         if (!element) {
-          console.error(`❌ [toggleVisibility] 요소를 찾을 수 없습니다: ${id}`);
+          console.error(`[toggleVisibility] 요소를 찾을 수 없습니다: ${id}`);
           return;
         }
 
@@ -816,7 +943,7 @@
           prevDisplay === "none" || prevDisplay === "" ? "flex" : "none";
 
         console.log(
-          `🟢 [toggleVisibility] ${id}: ${prevDisplay} → ${element.style.display}`
+          `[toggleVisibility] ${id}: ${prevDisplay} → ${element.style.display}`
         );
       }
 
@@ -824,11 +951,11 @@
       // 🔹 세션 / 사용자 관련
       // =====================================================
       async function fetchMemberEmail() {
-        console.log("📡 [fetchMemberEmail] 호출됨");
+        console.log("[fetchMemberEmail] 호출됨");
 
         try {
           const response = await fetch("/api/members/session");
-          console.log("✅ [fetchMemberEmail] 응답 상태 코드:", response.status);
+          console.log("[fetchMemberEmail] 응답 상태 코드:", response.status);
 
           if (response.status === 401) {
             // 세션 만료 혹은 로그인 필요
@@ -838,19 +965,19 @@
           }
 
           const data = await response.json();
-          console.log("📦 [fetchMemberEmail] 응답 데이터:", data);
+          console.log("[fetchMemberEmail] 응답 데이터:", data);
 
           if (data.loginEmail) {
-            console.log("👤 로그인 이메일 확인됨:", data.loginEmail);
+            console.log("로그인 이메일 확인됨:", data.loginEmail);
             saveMemberEmail(data.loginEmail);
           } else {
             console.warn(
-              "⚠️ [fetchMemberEmail] 사용자 이메일을 찾을 수 없습니다. 로그인 페이지로 이동합니다."
+              "[fetchMemberEmail] 사용자 이메일을 찾을 수 없습니다. 로그인 페이지로 이동합니다."
             );
             window.location.href = "/";
           }
         } catch (error) {
-          console.error("💥 [fetchMemberEmail] 에러 발생:", error);
+          console.error("[fetchMemberEmail] 에러 발생:", error);
           window.location.href = "/"; // 네트워크 오류 시에도 로그인 페이지로 이동
         }
       }
@@ -861,7 +988,13 @@
           memberEmail
         );
         sessionStorage.setItem("loginEmail", memberEmail);
-        console.log("✅ [saveMemberEmail] 저장 완료");
+        currentUserEmail = memberEmail; // 전역 변수에도 설정
+        console.log("[saveMemberEmail] 저장 완료");
+        
+        // WebSocket 연결 (아직 연결되지 않은 경우)
+        if (stompClient === null || !stompClient.connected) {
+          connectWebSocket(memberEmail);
+        }
       }
       /***
        * 로그인된 사용자 이메일 가져오기 함수
@@ -869,7 +1002,7 @@
        * */
       async function getMemberEmail() {
         try {
-          // ✅ 올바른 URL (members)
+          // 올바른 URL (members)
           const response = await fetch("/api/members/session", {
             credentials: "include", // 세션 쿠키 포함
           });
@@ -890,75 +1023,75 @@
       // 🔹 게시물 관련
       // =====================================================
       async function fetchPosts() {
-        console.log("📡 [fetchPosts] 함수 실행됨");
+        console.log("[fetchPosts] 함수 실행됨");
 
         try {
-          console.log("➡️ /api/posts 로 요청 시작");
+          console.log("/api/posts 로 요청 시작");
           const response = await fetch("/api/posts");
 
-          console.log("✅ 응답 상태 코드:", response.status);
+          console.log("응답 상태 코드:", response.status);
 
           if (!response.ok) {
-            console.error("❌ 응답 실패:", response.statusText);
+            console.error("응답 실패:", response.statusText);
             return;
           }
 
           const responseData = await response.json();
-          console.log("📦 전체 posts 데이터:", responseData);
+          console.log("전체 posts 데이터:", responseData);
 
           // 페이징 응답인 경우 content 배열 추출
           const posts = Array.isArray(responseData) ? responseData : (responseData.content || []);
-          console.log("📋 실제 게시물 배열:", posts);
+          console.log("실제 게시물 배열:", posts);
 
           const memberEmail = await getMemberEmail();
-          console.log("👤 현재 로그인 사용자 이메일:", memberEmail);
+          console.log("현재 로그인 사용자 이메일:", memberEmail);
 
           const postContainer = document.getElementById("postContainer");
           if (!postContainer) {
-            console.error("❌ postContainer 요소를 찾을 수 없습니다!");
+            console.error("postContainer 요소를 찾을 수 없습니다!");
             return;
           }
 
           postContainer.innerHTML = "";
-          console.log("🧹 postContainer 초기화 완료");
+          console.log("postContainer 초기화 완료");
 
           if (!Array.isArray(posts)) {
-            console.error("⚠️ posts 데이터가 배열이 아닙니다:", posts);
+            console.error("posts 데이터가 배열이 아닙니다:", posts);
             return;
           }
 
           if (posts.length === 0) {
-            console.log("📭 게시물이 없습니다.");
+            console.log("게시물이 없습니다.");
             postContainer.innerHTML = "<div style='padding: 20px; text-align: center; color: #536471;'>게시물이 없습니다.</div>";
             return;
           }
 
           posts.forEach((post, index) => {
-            console.group(`📝 게시물 [${index}]`);
+            console.group(`게시물 [${index}]`);
             console.log("post 데이터:", post);
 
             const card = document.createElement("div");
             card.className = "card";
             card.setAttribute("data-id", post.id);
             card.onclick = function () {
-              console.log(`🔍 게시물 클릭됨 → id: ${post.id}`);
+              console.log(`게시물 클릭됨 → id: ${post.id}`);
               viewPost(post.id);
             };
 
             // 본인 글일 때 삭제 버튼 (이메일로 비교)
             if (memberEmail && post.writerEmail === memberEmail) {
-              console.log("🗑️ 본인 게시글 → 삭제 버튼 추가");
+              console.log("본인 게시글 → 삭제 버튼 추가");
               const closeButton = document.createElement("span");
               closeButton.className = "close-button";
               closeButton.innerHTML = "&times;";
               closeButton.onclick = function (event) {
-                console.log(`❌ 게시물 삭제 클릭 → id: ${post.id}`);
+                console.log(`게시물 삭제 클릭 → id: ${post.id}`);
                 event.stopPropagation();
                 deletePost(event, this.parentNode.getAttribute("data-id"));
               };
               card.appendChild(closeButton);
             } else {
-              console.log("🙅‍♂️ 다른 사용자의 게시글 → 삭제 버튼 없음");
+              console.log("다른 사용자의 게시글 → 삭제 버튼 없음");
             }
 
             // 1. 프로필 이미지 (헤어 이미지)
@@ -967,11 +1100,11 @@
             img.src = post.profilePicturePath;
             img.onerror = function () {
               console.warn(
-                `⚠️ 프로필 이미지 로드 실패 (${post.profilePicturePath}), 기본 이미지로 대체`
+                `프로필 이미지 로드 실패 (${post.profilePicturePath}), 기본 이미지로 대체`
               );
               this.src = "/images/default-profile.png";
             };
-            console.log("🖼️ 프로필 이미지 경로:", img.src);
+            console.log(" 프로필 이미지 경로:", img.src);
 
             // 카드 콘텐츠 컨테이너
             const cardContent = document.createElement("div");
@@ -987,7 +1120,7 @@
             };
             authorLink.textContent = post.writerName || "(이름 없음)";
             header.appendChild(authorLink);
-            console.log("👤 작성자:", authorLink.textContent);
+            console.log("작성자:", authorLink.textContent);
 
             // 3. 날짜
             const dateDiv = document.createElement("div");
@@ -1000,28 +1133,28 @@
               minute: '2-digit'
             });
             dateDiv.textContent = formattedDate;
-            console.log("🕒 작성일:", formattedDate);
+            console.log("작성일:", formattedDate);
 
             // 4. 본문
             const body = document.createElement("div");
             body.className = "card-body";
             body.textContent = post.content || "(내용 없음)";
-            console.log("💬 내용:", post.content);
+            console.log("내용:", post.content);
 
             // 5. 본문 이미지
             if (post.imgsource) {
-              console.log("🖼️ 게시글 이미지 추가:", post.imgsource);
+              console.log("게시글 이미지 추가:", post.imgsource);
               const contentImg = document.createElement("img");
               contentImg.className = "content-img";
               contentImg.src = post.imgsource;
               contentImg.onerror = function () {
-                console.warn(`⚠️ 게시글 이미지 로드 실패 (${post.imgsource})`);
+                console.warn(`게시글 이미지 로드 실패 (${post.imgsource})`);
                 this.style.display = "none";
               };
               // 본문 이미지는 본문 다음에 추가
               body.appendChild(contentImg);
             } else {
-              console.log("🚫 게시글 이미지 없음");
+              console.log("게시글 이미지 없음");
             }
 
             // 순서대로 추가: 헤더(사용자 이름) → 날짜 → 본문(본문 이미지 포함)
@@ -1037,9 +1170,9 @@
             console.groupEnd();
           });
 
-          console.log("✅ 모든 게시물 렌더링 완료");
+          console.log("모든 게시물 렌더링 완료");
         } catch (error) {
-          console.error("💥 게시물 가져오기 중 에러 발생:", error);
+          console.error("게시물 가져오기 중 에러 발생:", error);
         }
       }
 
@@ -1066,7 +1199,7 @@
         const userEmail = sessionStorage.getItem("loginEmail");
 
         if (!userEmail) {
-          alert("⚠️ 로그인 정보가 없습니다. 다시 로그인해주세요.");
+          alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
           return;
         }
 
@@ -1158,9 +1291,9 @@
         }
       }
       // =====================================================
-      // 🔹 댓글 작성
+      // 댓글 작성
       // =====================================================
-      // ✅ 댓글 작성 함수 (postId 인자로 받기)
+      //  댓글 작성 함수 (postId 인자로 받기)
       async function submitComment(postId) {
         const commentContent = document.getElementById("commentContent").value;
         
@@ -1181,7 +1314,7 @@
         };
 
         try {
-          console.log("📤 댓글 작성 요청 postId:", postId, "user:", userEmail);
+          console.log(" 댓글 작성 요청 postId:", postId, "user:", userEmail);
 
           const response = await fetch(`/api/posts/${postId}/comments`, {
             method: "POST",
@@ -1199,7 +1332,7 @@
           document.getElementById("commentContent").value = ""; // 입력 필드 초기화
           fetchComments(postId);
         } catch (error) {
-          console.error("💥 Error submitting comment:", error);
+          console.error(" Error submitting comment:", error);
           alert("댓글 저장 중 오류가 발생했습니다: " + error.message);
         }
       }
@@ -1219,7 +1352,7 @@
           return;
         }
 
-        console.log(`👍 [toggleLove] 호출됨 → postId=${postId}, user=${user}`);
+        console.log(`[toggleLove] 호출됨 → postId=${postId}, user=${user}`);
 
         try {
           const response = await fetch(
@@ -1227,7 +1360,7 @@
             { method: "POST" }
           );
 
-          console.log("📡 [toggleLove] 응답 상태:", response.status);
+          console.log("[toggleLove] 응답 상태:", response.status);
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -1236,21 +1369,21 @@
           }
 
           const data = await response.json();
-          console.log("📦 [toggleLove] 서버 응답:", data);
+          console.log("[toggleLove] 서버 응답:", data);
 
           let currentCount = parseInt(
             button.textContent.match(/\d+/)?.[0] || "0"
           );
 
           if (data.liked) {
-            button.textContent = `❤️ ${currentCount + 1}`;
+            button.textContent = `${currentCount + 1}`;
             button.style.color = "#f4212e";
           } else {
-            button.textContent = `❤️ ${currentCount - 1}`;
+            button.textContent = `${currentCount - 1}`;
             button.style.color = "#536471";
           }
         } catch (error) {
-          console.error("💥 [toggleLove] 에러:", error);
+          console.error(" [toggleLove] 에러:", error);
           alert("좋아요 처리 중 오류가 발생했습니다: " + error.message);
         }
       }

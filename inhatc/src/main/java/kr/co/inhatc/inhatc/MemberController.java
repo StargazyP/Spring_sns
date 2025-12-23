@@ -34,19 +34,6 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @GetMapping("/mypage")
-    public String mypage(HttpSession session, Model model) {
-        String email = (String) session.getAttribute("loginEmail");
-        if (email == null) {
-            return "redirect:/"; // 로그인 안 되어 있으면 로그인 페이지로
-        }
-
-        MemberDTO member = memberService.getMemberByEmail(email); // DB에서 회원 정보 조회
-        model.addAttribute("loggedInMember", member); // 변수명 변경
-
-        return "mypage"; // templates/mypage.html 렌더링
-    }
-
     /**
      * 회원가입
      */

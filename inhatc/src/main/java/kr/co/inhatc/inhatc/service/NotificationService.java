@@ -3,6 +3,7 @@ package kr.co.inhatc.inhatc.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -14,15 +15,18 @@ import kr.co.inhatc.inhatc.repository.MemberRepository;
 import kr.co.inhatc.inhatc.repository.NotificationRepository;
 import kr.co.inhatc.inhatc.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 알림 생성 (좋아요)
@@ -50,7 +54,10 @@ public class NotificationService {
                     .recipientEmail(post.getMemberEmail())
                     .build();
 
-            notificationRepository.save(notification);
+            NotificationEntity savedNotification = notificationRepository.save(notification);
+            
+            // 실시간 알림 전송 (WebSocket)
+            sendNotificationToUser(post.getMemberEmail(), savedNotification);
         }
     }
 
@@ -72,8 +79,11 @@ public class NotificationService {
                 .actorEmail(actorEmail)
                 .recipientEmail(post.getMemberEmail())
                 .build();
-
-        notificationRepository.save(notification);
+        
+        NotificationEntity savedNotification = notificationRepository.save(notification);
+        
+        // 실시간 알림 전송 (WebSocket)
+        sendNotificationToUser(post.getMemberEmail(), savedNotification);
     }
 
     /**
@@ -112,15 +122,6 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 알림 읽음 처리
-     */
-    public void markAsRead(Long notificationId) {
-        NotificationEntity notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("알림을 찾을 수 없습니다."));
-        notification.markAsRead();
-        notificationRepository.save(notification);
-    }
 
     /**
      * 모든 알림 읽음 처리
@@ -130,6 +131,66 @@ public class NotificationService {
                 .findByRecipientEmailAndIsReadFalseOrderByCreatedAtDesc(recipientEmail);
         notifications.forEach(NotificationEntity::markAsRead);
         notificationRepository.saveAll(notifications);
+        
+        // 실시간으로 알림 수 업데이트 전송
+        sendNotificationCount(recipientEmail);
+    }
+    
+    /**
+     * WebSocket을 통해 특정 사용자에게 알림 전송
+     */
+    private void sendNotificationToUser(String recipientEmail, NotificationEntity notification) {
+        try {
+            // NotificationDTO로 변환
+            NotificationDTO dto = NotificationDTO.fromEntity(notification);
+            
+            // actorName 설정
+            memberRepository.findByMemberEmail(notification.getActorEmail())
+                    .ifPresent(member -> dto.setActorName(member.getMemberName()));
+            
+            // WebSocket으로 알림 전송
+            // topic 경로는 사용자 이메일을 기반으로 함 (URL 인코딩 필요)
+            String topic = "/topic/notifications/" + recipientEmail.replace("@", "_").replace(".", "_");
+            messagingTemplate.convertAndSend(topic, dto);
+            
+            log.debug("알림 전송 완료: recipient={}, type={}", recipientEmail, notification.getNotificationType());
+            
+            // 알림 수 업데이트 전송
+            sendNotificationCount(recipientEmail);
+        } catch (Exception e) {
+            log.error("알림 전송 실패: recipient={}", recipientEmail, e);
+        }
+    }
+    
+    /**
+     * WebSocket을 통해 알림 수 전송
+     */
+    private void sendNotificationCount(String recipientEmail) {
+        try {
+            long unreadCount = notificationRepository
+                    .findByRecipientEmailAndIsReadFalseOrderByCreatedAtDesc(recipientEmail)
+                    .size();
+            
+            String topic = "/topic/notifications/count/" + recipientEmail.replace("@", "_").replace(".", "_");
+            messagingTemplate.convertAndSend(topic, unreadCount);
+            
+            log.debug("알림 수 전송 완료: recipient={}, count={}", recipientEmail, unreadCount);
+        } catch (Exception e) {
+            log.error("알림 수 전송 실패: recipient={}", recipientEmail, e);
+        }
+    }
+    
+    /**
+     * 알림 읽음 처리 시 알림 수 업데이트
+     */
+    public void markAsRead(Long notificationId) {
+        NotificationEntity notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("알림을 찾을 수 없습니다."));
+        notification.markAsRead();
+        notificationRepository.save(notification);
+        
+        // 실시간으로 알림 수 업데이트 전송
+        sendNotificationCount(notification.getRecipientEmail());
     }
 }
 

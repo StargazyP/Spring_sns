@@ -13,7 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table; // Table 어노테이션을 import해야 합니다.
+import jakarta.persistence.Table; 
 import kr.co.inhatc.inhatc.dto.MemberDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,12 +46,12 @@ public class MemberEntity {
     @Column(name = "profile_picture_path")
     private String profilePicturePath;
 
-    /** ✅ 게시글: 단방향, PostEntity에 memberEmail 기준으로 연결 */
+    /** 게시글: 단방향, PostEntity에 memberEmail 기준으로 연결 */
     @OneToMany
     @JoinColumn(name = "member_email", referencedColumnName = "member_email", insertable = false, updatable = false)
     private List<PostEntity> posts = new ArrayList<>();
 
-    /** ✅ 댓글: 단방향, CommentEntity에 writer 기준으로 연결 */
+    /** 댓글: 단방향, CommentEntity에 writer 기준으로 연결 */
     @OneToMany
     @JoinColumn(name = "writer", referencedColumnName = "member_email", insertable = false, updatable = false)
     private List<CommentEntity> comments = new ArrayList<>();
@@ -64,7 +64,7 @@ public class MemberEntity {
         // profilePicturePath 처리: 전체 경로인 경우 그대로 사용, URL 형식인 경우 그대로 사용
         String profilePath = member.getProfilePicturePath();
         if (profilePath != null && !profilePath.isEmpty()) {
-            // 전체 경로인 경우 (C:\ 또는 /로 시작하는 절대 경로)
+            // 전체 경로인 경우 C:\ 또는 /로 시작하는 절대 경로
             if (profilePath.contains(":\\") || profilePath.startsWith("C:") || profilePath.startsWith("/")) {
                 // 전체 경로는 그대로 저장 (Controller에서 처리)
                 // 변경 없음
