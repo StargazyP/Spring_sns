@@ -355,6 +355,41 @@
         height: 16px;
       }
 
+      /* X.com 스타일 말풍선 버튼 (대댓글이 있는 경우) */
+      .thread-button {
+        background-color: transparent;
+        border: none;
+        color: #606060;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+
+      .thread-button:hover {
+        background-color: #1d9bf0;
+        color: #ffffff;
+      }
+
+      .thread-button:hover svg {
+        fill: #ffffff;
+      }
+
+      .thread-button svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      .thread-button span {
+        font-weight: 500;
+      }
+
       .reply-text-button {
         background-color: transparent;
         border: none;
@@ -413,6 +448,70 @@
         margin-top: 8px;
         width: 100%;
         box-sizing: border-box;
+        position: relative;
+      }
+
+      /* Node 연결 시각화 - 부모 노드 (자식이 있는 댓글) */
+      .comment-node-parent {
+        position: relative;
+      }
+
+      .comment-node-parent:not(.comment-reply)::after {
+        content: '';
+        position: absolute;
+        left: 20px;
+        bottom: 0;
+        width: 2px;
+        height: 12px;
+        background-color: #065fd4;
+        z-index: 1;
+        opacity: 0.5;
+      }
+
+      /* Node 연결 시각화 - 자식 노드 (대댓글) */
+      .comment-node-child {
+        position: relative;
+        /* margin-left는 JavaScript에서 동적으로 설정 */
+      }
+
+      /* 자식 노드의 수평 연결선 (부모로부터 오는 선) - CSS 변수 사용 */
+      .comment-node-child::before {
+        content: '';
+        position: absolute;
+        left: var(--line-left, -36px);
+        top: 20px;
+        width: var(--line-width, 36px);
+        height: 2px;
+        background-color: #065fd4;
+        z-index: 1;
+        opacity: 0.5;
+      }
+
+      /* 자식 노드의 연결점 (원형 노드) - CSS 변수 사용 */
+      .comment-node-child::after {
+        content: '';
+        position: absolute;
+        left: var(--node-left, -38px);
+        top: 19px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #065fd4;
+        z-index: 2;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px rgba(6, 95, 212, 0.3);
+      }
+
+      /* 연속된 자식 노드들 사이의 수직 연결선 */
+      .comment-node-child:not(:first-of-type)::before {
+        top: -8px;
+        height: 30px;
+      }
+
+      /* 같은 부모를 가진 첫 번째 자식 노드의 연결선 */
+      .comment-node-parent + .comment-node-child::before {
+        top: 20px;
+        height: 2px;
       }
 
       .comment-reply .profile-img {
@@ -440,28 +539,14 @@
         line-height: 18px;
       }
 
-      /* YouTube 스타일 답글 컨테이너 */
+      /* 답글 컨테이너는 더 이상 사용하지 않음 (같은 컨테이너에 렌더링) */
       .comment-replies-container {
-        margin-top: 8px;
-        margin-left: 56px; /* 프로필 이미지(40px) + gap(16px) */
-        padding-left: 0;
-        width: calc(100% - 56px);
-        box-sizing: border-box;
+        display: none; /* 숨김 처리 */
       }
 
-      /* 중첩된 대댓글 컨테이너 */
-      .comment-reply .comment-replies-container {
-        margin-left: 48px; /* 대댓글 프로필(32px) + gap(16px) */
-        width: calc(100% - 48px);
-      }
-
-      /* 스레드 스타일 제거 (YouTube는 연결선 없음) */
+      /* 스레드 스타일 제거 */
       .comment-thread {
-        position: relative;
-        margin-top: 0;
-        margin-left: 0;
-        padding-left: 0;
-        width: 100%;
+        display: none; /* 숨김 처리 */
       }
 
 
@@ -1034,6 +1119,7 @@
       let currentThreadCommentId = null; // Thread View에서 보는 댓글 ID
       const pageSize = 20;
       let commentTree = []; // 전체 댓글 트리 저장
+      let allCommentsFlat = []; // 모든 댓글과 대댓글을 평면 배열로 저장 (무한 스크롤용)
 
       async function loadComments(postId, page = 0, isThreadView = false) {
         if (isLoadingComments) return;
@@ -1079,18 +1165,7 @@
           }
           
           // 평면 배열을 트리 구조로 변환 (Node 기반)
-          console.log("서버 응답 댓글 데이터:", comments);
-          console.log("댓글 개수:", comments.length);
-          if (comments.length > 0) {
-            console.log("첫 번째 댓글 구조:", comments[0]);
-            console.log("첫 번째 댓글의 replies:", comments[0].replies);
-          }
-          
           commentTree = buildCommentTree(comments);
-          console.log("트리 변환 후 루트 노드 개수:", commentTree.length);
-          if (commentTree.length > 0) {
-            console.log("첫 번째 루트 노드의 자식 개수:", commentTree[0].children.length);
-          }
           
           // Thread View인 경우
           if (isThreadView && currentThreadCommentId) {
@@ -1098,30 +1173,44 @@
             return;
           }
           
-          // 기본 화면: 댓글만 표시 (대댓글은 숨김)
+          // 트리를 평면 배열로 변환 (댓글 + 대댓글 모두 포함)
+          if (page === 0 || !isThreadView) {
+            allCommentsFlat = flattenCommentTree(commentTree);
+          }
+          
+          // 기본 화면: 댓글과 대댓글을 같은 컨테이너에 표시
           const container = document.getElementById("comments");
           if (!container) return;
           
           if (page === 0 || !isThreadView) {
             container.innerHTML = "";
+            currentPage = 0;
           }
           
-          if (!commentTree || commentTree.length === 0) {
+          if (!allCommentsFlat || allCommentsFlat.length === 0) {
             if (container.children.length === 0) {
               container.innerHTML = "<div style='text-align: center; padding: 20px; color: #536471;'>댓글이 없습니다.</div>";
             }
+            hasMoreComments = false;
             return;
           }
           
-          // DFS로 루트 댓글만 렌더링 (자식은 숨김)
-          commentTree.forEach((rootNode) => {
-            renderCommentNodeDFS(container, rootNode, false); // showChildren = false
+          // 페이징 처리: 현재 페이지에 해당하는 댓글들만 렌더링
+          const startIndex = 0; // 첫 페이지는 0부터
+          const endIndex = Math.min(pageSize, allCommentsFlat.length);
+          const commentsToRender = allCommentsFlat.slice(startIndex, endIndex);
+          
+          // 같은 컨테이너에 댓글과 대댓글 모두 렌더링
+          commentsToRender.forEach((node) => {
+            renderCommentNodeFlat(container, node);
           });
-
-          // 무한 스크롤 설정 (all=true일 때는 무한 스크롤 비활성화)
-          if (isThreadView) {
-            setupInfiniteScroll();
-          }
+          
+          // 무한 스크롤 가능 여부 업데이트
+          hasMoreComments = endIndex < allCommentsFlat.length;
+          currentPage = 1; // 다음 페이지는 1부터
+          
+          // 무한 스크롤 설정
+          setupInfiniteScroll();
         } catch (error) {
           console.error("댓글 로드 오류:", error);
         } finally {
@@ -1129,10 +1218,30 @@
         }
       }
 
-      // 다음 페이지 댓글 로드
+      // 다음 페이지 댓글 로드 (평면 배열에서 다음 페이지 로드)
       async function loadMoreComments() {
         if (!hasMoreComments || isLoadingComments || currentThreadCommentId) return;
-        await loadComments(currentPostId, currentPage + 1, false);
+        
+        // 평면 배열에서 다음 페이지 렌더링
+        const container = document.getElementById("comments");
+        if (!container || !allCommentsFlat || allCommentsFlat.length === 0) return;
+        
+        const startIndex = currentPage * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, allCommentsFlat.length);
+        
+        if (startIndex >= allCommentsFlat.length) {
+          hasMoreComments = false;
+          return;
+        }
+        
+        const commentsToRender = allCommentsFlat.slice(startIndex, endIndex);
+        
+        commentsToRender.forEach((node) => {
+          renderCommentNodeFlat(container, node);
+        });
+        
+        hasMoreComments = endIndex < allCommentsFlat.length;
+        currentPage++;
       }
 
       // 댓글 ID로 댓글 찾기 (재귀)
@@ -1201,23 +1310,144 @@
         mainContent.appendChild(contentDiv);
         mainCommentDiv.appendChild(mainContent);
 
-        // 12-24 답글들 표시 (스레드 구조)
-        if (comment.replies && comment.replies.length > 0) {
-          const repliesContainer = document.createElement("div");
-          repliesContainer.className = "comment-thread comment-replies-container"; // 12-24 답글 컨테이너 클래스 추가
-          
-          comment.replies.forEach((reply) => {
-            renderComment(repliesContainer, reply, comment);
-          });
-          
-          contentDiv.appendChild(repliesContainer);
-        }
+        // 대댓글 컨테이너 제거 - 같은 컨테이너에 평면적으로 렌더링하므로 불필요
 
         container.appendChild(mainCommentDiv);
       }
 
 
-      // DFS로 댓글 Node 렌더링 (깊이 우선 탐색)
+      // 평면 배열로 댓글 렌더링 (같은 컨테이너에 댓글과 대댓글 모두)
+      function renderCommentNodeFlat(container, node) {
+        if (!node) return;
+        
+        const isReply = node.depth > 0;
+        const commentDiv = document.createElement("div");
+        commentDiv.className = isReply ? "comment comment-reply" : "comment";
+        commentDiv.setAttribute("data-comment-id", node.id);
+        commentDiv.setAttribute("data-depth", node.depth);
+        commentDiv.setAttribute("data-parent-id", node.parentCommentId || "");
+        
+        // Node 연결 시각화를 위한 클래스 추가
+        if (node.parentCommentId) {
+          commentDiv.classList.add("comment-node-child");
+          // depth에 따른 동적 들여쓰기
+          const indent = 56 * node.depth;
+          commentDiv.style.marginLeft = `${indent}px`;
+          
+          // 연결선 위치 동적 계산
+          const lineWidth = 36 + (node.depth - 1) * 56;
+          const lineLeft = -lineWidth;
+          const nodeLeft = lineLeft - 2;
+          
+          // CSS 변수로 연결선 위치 설정
+          commentDiv.style.setProperty('--line-width', `${lineWidth}px`);
+          commentDiv.style.setProperty('--line-left', `${lineLeft}px`);
+          commentDiv.style.setProperty('--node-left', `${nodeLeft}px`);
+        }
+        if (node.children.length > 0) {
+          commentDiv.classList.add("comment-node-parent");
+        }
+        
+        const img = document.createElement("img");
+        img.className = "profile-img";
+        img.src = node.writerProfile || "/images/default-profile.png";
+        img.onerror = function() {
+          this.src = "/images/default-profile.png";
+        };
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "comment-content";
+        
+        const authorDiv = document.createElement("div");
+        authorDiv.className = "comment-author";
+        
+        const authorNameSpan = document.createElement("span");
+        authorNameSpan.className = "comment-author-name";
+        authorNameSpan.textContent = node.writerName || "(이름 없음)";
+        
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "comment-time";
+        const createdDate = node.createDate ? new Date(node.createDate) : new Date();
+        timeSpan.textContent = getTimeAgo(createdDate);
+        
+        authorDiv.appendChild(authorNameSpan);
+        authorDiv.appendChild(timeSpan);
+        
+        // 긴 댓글 처리
+        const textP = document.createElement("p");
+        textP.className = "comment-text";
+        const maxLength = 200;
+        const fullText = node.comment;
+        if (fullText.length > maxLength) {
+          const shortText = fullText.substring(0, maxLength);
+          textP.innerHTML = `<span class="comment-text-short">${shortText}...</span><span class="comment-text-full" style="display:none">${fullText}</span>`;
+          
+          const expandButton = document.createElement("button");
+          expandButton.className = "expand-comment-button";
+          expandButton.textContent = "더보기";
+          expandButton.onclick = function(e) {
+            e.stopPropagation();
+            const shortSpan = textP.querySelector(".comment-text-short");
+            const fullSpan = textP.querySelector(".comment-text-full");
+            if (shortSpan && fullSpan) {
+              if (shortSpan.style.display !== "none") {
+                shortSpan.style.display = "none";
+                fullSpan.style.display = "inline";
+                expandButton.textContent = "숨기기";
+              } else {
+                shortSpan.style.display = "inline";
+                fullSpan.style.display = "none";
+                expandButton.textContent = "더보기";
+              }
+            }
+          };
+          textP.appendChild(expandButton);
+        } else {
+          textP.textContent = fullText;
+        }
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "comment-actions";
+        
+        // 답글 아이콘 버튼
+        const replyIconButton = document.createElement("button");
+        replyIconButton.className = "reply-button";
+        replyIconButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+        replyIconButton.onclick = function(e) {
+          e.stopPropagation();
+          toggleReplyForm(node.id);
+        };
+        actionsDiv.appendChild(replyIconButton);
+        
+        // 대댓글이 있는 경우 말풍선 버튼 추가 (X.com 스타일)
+        if (node.children.length > 0) {
+          const threadButton = document.createElement("button");
+          threadButton.className = "thread-button";
+          const totalReplies = node.getTotalReplyCount();
+          threadButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg> <span>${totalReplies}</span>`;
+          threadButton.onclick = function(e) {
+            e.stopPropagation();
+            // X.com 스타일: /post/게시글번호/댓글번호로 이동
+            window.location.href = `/post/${currentPostId}/${node.id}`;
+          };
+          actionsDiv.appendChild(threadButton);
+        }
+        
+        // 답글 작성 폼
+        const replyForm = createReplyForm(node.id);
+        
+        contentDiv.appendChild(authorDiv);
+        contentDiv.appendChild(textP);
+        contentDiv.appendChild(actionsDiv);
+        contentDiv.appendChild(replyForm);
+
+        commentDiv.appendChild(img);
+        commentDiv.appendChild(contentDiv);
+        
+        container.appendChild(commentDiv);
+      }
+
+      // DFS로 댓글 Node 렌더링 (깊이 우선 탐색) - 호환성 유지
       function renderCommentNodeDFS(container, node, showChildren = false, isReply = false) {
         if (!node) return;
         
@@ -1305,17 +1535,18 @@
         contentDiv.appendChild(textP);
         contentDiv.appendChild(actionsDiv);
         
-        // 답글 보기 버튼 (자식이 있을 때만)
+        // 대댓글이 있는 경우 말풍선 버튼 추가 (X.com 스타일)
         if (node.children.length > 0) {
-          const viewRepliesButton = document.createElement("button");
-          viewRepliesButton.className = "view-replies-button";
+          const threadButton = document.createElement("button");
+          threadButton.className = "thread-button";
           const totalReplies = node.getTotalReplyCount();
-          viewRepliesButton.textContent = `답글 ${totalReplies}개 보기`;
-          viewRepliesButton.onclick = async function(e) {
+          threadButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg> <span>${totalReplies}</span>`;
+          threadButton.onclick = function(e) {
             e.stopPropagation();
-            await toggleRepliesThreadDFS(node.id, node);
+            // X.com 스타일: /post/게시글번호/댓글번호로 이동
+            window.location.href = `/post/${currentPostId}/${node.id}`;
           };
-          contentDiv.appendChild(viewRepliesButton);
+          actionsDiv.appendChild(threadButton);
         }
         
         contentDiv.appendChild(replyForm);
@@ -1323,22 +1554,7 @@
         commentDiv.appendChild(img);
         commentDiv.appendChild(contentDiv);
         
-        // 대댓글 컨테이너 생성 (기본적으로 숨김)
-        if (node.children.length > 0) {
-          const repliesContainer = document.createElement("div");
-          repliesContainer.className = "comment-thread comment-replies-container";
-          repliesContainer.id = `replies-${node.id}`;
-          repliesContainer.style.display = showChildren ? "block" : "none";
-          
-          // DFS로 자식 노드들 렌더링 (항상 렌더링하되 컨테이너만 숨김)
-          // 이렇게 하면 "답글 보기" 클릭 시 즉시 표시 가능
-          node.children.forEach((childNode) => {
-            renderCommentNodeDFS(repliesContainer, childNode, showChildren, true);
-          });
-          
-          // 대댓글 컨테이너를 commentDiv에 추가 (contentDiv 다음)
-          commentDiv.appendChild(repliesContainer);
-        }
+        // 대댓글 컨테이너 제거 - 같은 컨테이너에 평면적으로 렌더링하므로 불필요
         
         container.appendChild(commentDiv);
       }
@@ -1392,6 +1608,18 @@
             });
           }
         }
+      }
+
+      // 트리 구조를 평면 배열로 변환 (DFS 순회)
+      function flattenCommentTree(nodes) {
+        let result = [];
+        function dfs(node) {
+          if (!node) return;
+          result.push(node);
+          node.children.forEach(child => dfs(child));
+        }
+        nodes.forEach(root => dfs(root));
+        return result;
       }
 
       // 모든 댓글을 평면 배열로 변환 (재귀) - 호환성 유지
