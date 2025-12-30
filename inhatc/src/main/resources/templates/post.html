@@ -389,6 +389,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
+        position: relative;
       }
 
       .view-replies-button:hover {
@@ -401,8 +402,24 @@
         transition: transform 0.2s;
       }
 
+      /* expanded 상태일 때 화살표 회전 */
       .view-replies-button.expanded::before {
         transform: rotate(180deg);
+      }
+
+      /* 대댓글 기본 숨김 - CSS로 처리 */
+      .comment-reply.reply-hidden {
+        display: none !important;
+      }
+
+      /* expanded 상태일 때 대댓글 표시 - CSS 클래스 기반 */
+      .comment-reply:not(.reply-hidden) {
+        display: flex !important;
+      }
+
+      /* 2번 이상 클릭 시 버튼 숨김 */
+      .view-replies-button.hidden {
+        display: none !important;
       }
 
       /* Thread View 관련 스타일 제거 (YouTube 스타일에서는 사용 안 함) */
@@ -478,14 +495,27 @@
         display: block;
       }
 
-      /* 연속된 자식 노드들 사이의 수직 연결선 */
-      .comment-node-child:not(:first-of-type)::before {
-        top: -8px;
-        height: 30px;
+      /* 첫 번째 자식 노드의 수평 연결선 */
+      .comment-node-parent + .comment-node-child::before {
+        top: 20px;
+        height: 2px;
       }
 
-      /* 같은 부모를 가진 첫 번째 자식 노드의 연결선 */
-      .comment-node-parent + .comment-node-child::before {
+      /* 연속된 자식 노드들 사이의 연결선 (수직선으로 위에서 아래로) */
+      .comment-node-child:not(:first-of-type)::before {
+        top: -8px;
+        height: calc(28px + 2px); /* 대댓글 간격 + 수평선 */
+        /* 수직선 부분 */
+        background-color: #065fd4;
+        /* 수평선은 마지막 2px만 */
+        background-image: linear-gradient(to right, #065fd4 0%, #065fd4 100%);
+        background-size: 100% 2px;
+        background-position: bottom;
+        background-repeat: no-repeat;
+      }
+
+      /* 마지막 자식 노드의 연결선 (수평선만) */
+      .comment-node-child:last-of-type::before {
         top: 20px;
         height: 2px;
       }
@@ -1451,34 +1481,38 @@
         commentDiv.appendChild(img);
         commentDiv.appendChild(contentDiv);
         
-        // 대댓글은 기본적으로 숨김 처리
+        // 대댓글은 기본적으로 숨김 처리 (CSS 클래스만 사용)
         if (isReply) {
-          commentDiv.style.display = "none";
           commentDiv.classList.add("reply-hidden");
         }
         
         container.appendChild(commentDiv);
       }
 
-      // 대댓글 표시/숨김 토글 함수 (재귀적으로 모든 하위 대댓글 포함)
+      // 클릭 횟수 추적을 위한 Map
+      const replyClickCount = new Map();
+
+      // 대댓글 표시/숨김 토글 함수 (CSS 기반, 클릭 횟수 추적)
       function toggleRepliesVisibility(parentCommentId, button) {
         const container = document.getElementById("comments");
         if (!container) return;
         
-        // 해당 부모 댓글의 직접 자식 대댓글 찾기 (depth 1만)
-        const directReplies = Array.from(container.querySelectorAll(`[data-parent-id="${parentCommentId}"]`))
-          .filter(reply => {
-            const depth = parseInt(reply.getAttribute("data-depth") || "0");
-            return depth === 1; // 직접 자식만
-          });
+        // 클릭 횟수 증가
+        const currentCount = replyClickCount.get(parentCommentId) || 0;
+        const newCount = currentCount + 1;
+        replyClickCount.set(parentCommentId, newCount);
         
-        let isVisible = false;
-        
-        if (directReplies.length > 0) {
-          // 첫 번째 대댓글의 display 상태 확인
-          const firstReply = directReplies[0];
-          isVisible = firstReply.style.display !== "none" && !firstReply.classList.contains("reply-hidden");
+        // 2번 이상 클릭 시 버튼 숨김
+        if (newCount >= 2) {
+          if (button) {
+            button.classList.add("hidden");
+          }
+          return;
         }
+        
+        // 부모 댓글 요소 찾기
+        const parentComment = container.querySelector(`[data-comment-id="${parentCommentId}"]`);
+        if (!parentComment) return;
         
         // 재귀적으로 모든 하위 대댓글 찾기
         function getAllChildReplies(parentId) {
@@ -1498,25 +1532,27 @@
         
         const allReplies = getAllChildReplies(parentCommentId);
         
-        // 모든 자식 대댓글 표시/숨김 토글
-        allReplies.forEach((reply) => {
-          if (isVisible) {
-            reply.style.display = "none";
-            reply.classList.add("reply-hidden");
-          } else {
-            reply.style.display = "";
-            reply.classList.remove("reply-hidden");
-          }
-        });
+        // CSS 클래스로 토글 (JavaScript 최소화)
+        const isExpanded = parentComment.classList.contains("expanded");
         
-        // 버튼 텍스트 변경
-        if (button) {
-          // 전체 대댓글 개수 계산 (직접 자식의 getTotalReplyCount 사용)
-          const totalReplies = allReplies.length;
-          if (isVisible) {
+        if (isExpanded) {
+          // 숨김 처리
+          parentComment.classList.remove("expanded");
+          allReplies.forEach((reply) => {
+            reply.classList.add("reply-hidden");
+          });
+          if (button) {
+            const totalReplies = allReplies.length;
             button.textContent = `답글 ${totalReplies}개 보기`;
             button.classList.remove("expanded");
-          } else {
+          }
+        } else {
+          // 표시 처리
+          parentComment.classList.add("expanded");
+          allReplies.forEach((reply) => {
+            reply.classList.remove("reply-hidden");
+          });
+          if (button) {
             button.textContent = `답글 숨기기`;
             button.classList.add("expanded");
           }
