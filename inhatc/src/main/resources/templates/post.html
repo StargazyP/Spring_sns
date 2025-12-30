@@ -435,120 +435,7 @@
         position: relative;
       }
 
-      /* Node 연결 시각화 - 부모 노드 (자식이 있는 댓글) */
-      .comment-node-parent {
-        position: relative;
-      }
-
-      .comment-node-parent:not(.comment-reply)::after {
-        content: '';
-        position: absolute;
-        left: 20px;
-        bottom: 0;
-        width: 2px;
-        height: 12px;
-        background-color: #065fd4;
-        z-index: 1;
-        opacity: 0.4;
-        display: block;
-      }
-
-      /* Node 연결 시각화 - 자식 노드 (대댓글) */
-      .comment-node-child {
-        position: relative;
-        /* margin-left는 JavaScript에서 동적으로 설정 */
-      }
-
-      /* 대댓글이 숨겨져 있을 때 연결선도 숨김 */
-      .comment-node-child.reply-hidden::before,
-      .comment-node-child.reply-hidden::after {
-        display: none;
-      }
-
-      /* 자식 노드의 수평 연결선 (부모로부터 오는 선) - CSS 변수 사용 */
-      .comment-node-child::before {
-        content: '';
-        position: absolute;
-        left: var(--line-left, -36px);
-        top: 20px;
-        width: var(--line-width, 36px);
-        height: 2px;
-        background-color: #065fd4;
-        z-index: 1;
-        opacity: 0.4;
-        display: block;
-      }
-
-      /* 자식 노드의 연결점 (원형 노드) - CSS 변수 사용 */
-      .comment-node-child::after {
-        content: '';
-        position: absolute;
-        left: var(--node-left, -38px);
-        top: 19px;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #065fd4;
-        z-index: 2;
-        border: 2px solid #ffffff;
-        box-shadow: 0 0 0 1px rgba(6, 95, 212, 0.3);
-        display: block;
-      }
-
-      /* 첫 번째 자식 노드의 수평 연결선 */
-      .comment-node-parent + .comment-node-child::before {
-        top: 20px;
-        height: 2px;
-      }
-
-      /* 연속된 자식 노드들 사이의 연결선 (수직선으로 위에서 아래로) */
-      .comment-node-child:not(:first-of-type)::before {
-        top: -8px;
-        height: calc(28px + 2px); /* 대댓글 간격 + 수평선 */
-        /* 수직선 부분 */
-        background-color: #065fd4;
-        /* 수평선은 마지막 2px만 */
-        background-image: linear-gradient(to right, #065fd4 0%, #065fd4 100%);
-        background-size: 100% 2px;
-        background-position: bottom;
-        background-repeat: no-repeat;
-      }
-
-      /* 마지막 자식 노드의 연결선 (수평선만) */
-      .comment-node-child:last-of-type::before {
-        top: 20px;
-        height: 2px;
-      }
-
-      /* depth 1 대댓글의 연결선 위치 고정 */
-      .comment-node-child[data-depth="1"]::before {
-        left: -36px;
-        width: 36px;
-      }
-
-      .comment-node-child[data-depth="1"]::after {
-        left: -38px;
-      }
-
-      /* depth 2 대댓글의 연결선 위치 고정 */
-      .comment-node-child[data-depth="2"]::before {
-        left: -92px;
-        width: 92px;
-      }
-
-      .comment-node-child[data-depth="2"]::after {
-        left: -94px;
-      }
-
-      /* depth 3 이상 대댓글의 연결선 위치 고정 */
-      .comment-node-child[data-depth="3"]::before {
-        left: -148px;
-        width: 148px;
-      }
-
-      .comment-node-child[data-depth="3"]::after {
-        left: -150px;
-      }
+      /* Node 연결선 효과 제거됨 */
 
       .comment-reply .profile-img {
         width: 32px;
@@ -1363,25 +1250,10 @@
         commentDiv.setAttribute("data-depth", node.depth);
         commentDiv.setAttribute("data-parent-id", node.parentCommentId || "");
         
-        // Node 연결 시각화를 위한 클래스 추가
+        // depth에 따른 동적 들여쓰기 (Node 연결선 제거)
         if (node.parentCommentId) {
-          commentDiv.classList.add("comment-node-child");
-          // depth에 따른 동적 들여쓰기
           const indent = 56 * node.depth;
           commentDiv.style.marginLeft = `${indent}px`;
-          
-          // 연결선 위치 동적 계산
-          const lineWidth = 36 + (node.depth - 1) * 56;
-          const lineLeft = -lineWidth;
-          const nodeLeft = lineLeft - 2;
-          
-          // CSS 변수로 연결선 위치 설정
-          commentDiv.style.setProperty('--line-width', `${lineWidth}px`);
-          commentDiv.style.setProperty('--line-left', `${lineLeft}px`);
-          commentDiv.style.setProperty('--node-left', `${nodeLeft}px`);
-        }
-        if (node.children.length > 0) {
-          commentDiv.classList.add("comment-node-parent");
         }
         
         const img = document.createElement("img");
@@ -1492,7 +1364,7 @@
       // 클릭 횟수 추적을 위한 Map
       const replyClickCount = new Map();
 
-      // 대댓글 표시/숨김 토글 함수 (CSS 기반, 클릭 횟수 추적)
+      // 대댓글 표시/숨김 토글 함수 (2번 클릭 시 버튼 숨김)
       function toggleRepliesVisibility(parentCommentId, button) {
         const container = document.getElementById("comments");
         if (!container) return;
@@ -1501,18 +1373,6 @@
         const currentCount = replyClickCount.get(parentCommentId) || 0;
         const newCount = currentCount + 1;
         replyClickCount.set(parentCommentId, newCount);
-        
-        // 2번 이상 클릭 시 버튼 숨김
-        if (newCount >= 2) {
-          if (button) {
-            button.classList.add("hidden");
-          }
-          return;
-        }
-        
-        // 부모 댓글 요소 찾기
-        const parentComment = container.querySelector(`[data-comment-id="${parentCommentId}"]`);
-        if (!parentComment) return;
         
         // 재귀적으로 모든 하위 대댓글 찾기
         function getAllChildReplies(parentId) {
@@ -1532,7 +1392,11 @@
         
         const allReplies = getAllChildReplies(parentCommentId);
         
-        // CSS 클래스로 토글 (JavaScript 최소화)
+        // 부모 댓글 요소 찾기
+        const parentComment = container.querySelector(`[data-comment-id="${parentCommentId}"]`);
+        if (!parentComment) return;
+        
+        // CSS 클래스로 토글
         const isExpanded = parentComment.classList.contains("expanded");
         
         if (isExpanded) {
@@ -1556,6 +1420,11 @@
             button.textContent = `답글 숨기기`;
             button.classList.add("expanded");
           }
+        }
+        
+        // 2번 이상 클릭 시 버튼 숨김
+        if (newCount >= 2 && button) {
+          button.classList.add("hidden");
         }
       }
 
