@@ -28,8 +28,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import kr.co.inhatc.inhatc.dto.FollowStatsDTO;
 import kr.co.inhatc.inhatc.dto.MemberDTO;
 import kr.co.inhatc.inhatc.dto.PostResponseDTO;
+import kr.co.inhatc.inhatc.service.FollowService;
 import kr.co.inhatc.inhatc.service.MemberService;
 import kr.co.inhatc.inhatc.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,7 @@ public class MemberPageController {
 
     private final MemberService memberService;
     private final PostService postService;
+    private final FollowService followService;
     
     @Value("${app.upload.profile-dir}")
     private String profileUploadDir;
@@ -72,6 +75,10 @@ public class MemberPageController {
         List<PostResponseDTO> userPosts = postService.findByMemberEmail(email);
         model.addAttribute("userpost", userPosts);
         model.addAttribute("userPosts", userPosts); // mypage.html 호환성을 위해 추가
+
+        // 팔로우 통계 조회
+        FollowStatsDTO followStats = followService.getFollowStats(email, email);
+        model.addAttribute("followStats", followStats);
 
         return "mypage";
     }
@@ -265,6 +272,10 @@ public class MemberPageController {
             List<PostResponseDTO> userPosts = postService.findByMemberEmail(decodedEmail);
             model.addAttribute("userPosts", userPosts);
             model.addAttribute("userpost", userPosts); // mypage.html 호환성을 위해 추가
+
+            // 팔로우 통계 조회
+            FollowStatsDTO followStats = followService.getFollowStats(decodedEmail, loginEmail);
+            model.addAttribute("followStats", followStats);
 
             return "mypage";
         } catch (Exception e) {

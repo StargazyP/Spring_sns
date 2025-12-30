@@ -285,6 +285,170 @@
         margin: 16px;
       }
 
+      /* 팔로우 관련 스타일 */
+      .follow-stat {
+        transition: opacity 0.2s;
+      }
+
+      .follow-stat:hover {
+        opacity: 0.7;
+      }
+
+      .follow-btn {
+        background-color: #0f1419 !important;
+        color: #ffffff !important;
+      }
+
+      .follow-btn.following {
+        background-color: #ffffff !important;
+        color: #0f1419 !important;
+        border: 1px solid #eff3f4 !important;
+      }
+
+      .follow-btn.following:hover {
+        background-color: #f4212e !important;
+        color: #ffffff !important;
+        border-color: #f4212e !important;
+      }
+
+      .follow-btn.following:hover::after {
+        content: '언팔로우';
+      }
+
+      .follow-btn.following::after {
+        content: '팔로잉';
+      }
+
+      /* 모달 스타일 */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        overflow: auto;
+      }
+
+      .modal-content {
+        background-color: #ffffff;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #eff3f4;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f1419;
+        margin: 0;
+      }
+
+      .close {
+        color: #536471;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .close:hover {
+        color: #0f1419;
+      }
+
+      .modal-body {
+        padding: 0;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .follow-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #eff3f4;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .follow-item:hover {
+        background-color: #f7f9f9;
+      }
+
+      .follow-item:last-child {
+        border-bottom: none;
+      }
+
+      .follow-item-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .follow-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .follow-item-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f1419;
+        margin-bottom: 2px;
+      }
+
+      .follow-item-email {
+        font-size: 13px;
+        color: #536471;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .follow-item-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      .follow-item-btn.follow {
+        background-color: #0f1419;
+        color: #ffffff;
+      }
+
+      .follow-item-btn.following {
+        background-color: #ffffff;
+        color: #0f1419;
+        border: 1px solid #eff3f4;
+      }
+
+      .follow-item-btn.following:hover {
+        background-color: #f4212e;
+        color: #ffffff;
+        border-color: #f4212e;
+      }
+
       /* 반응형 디자인 */
       @media (max-width: 768px) {
         .wrapper {
@@ -367,16 +531,40 @@
             </th:block>
           </div>
           <div th:if="${viewedMember != null || loggedInMember != null}">
-            <span th:text="${viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail}"></span>
+            <span 
+              th:text="${viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail}"
+              th:attr="data-viewed-email=${viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail}"
+            ></span>
           </div>
           
-          <!-- 메시지 버튼 (다른 유저 페이지일 때만 표시) -->
-          <div th:if="${isOwner == null or !isOwner}" style="margin-top: 16px;">
+          <!-- 팔로우 통계 및 버튼 -->
+          <div style="margin-top: 16px; display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <!-- 팔로워 수 -->
+            <div style="cursor: pointer;" onclick="showFollowers()" class="follow-stat">
+              <span style="font-weight: 700; color: #0f1419;" th:text="${followStats != null ? followStats.followerCount : 0}">0</span>
+              <span style="color: #536471; margin-left: 4px;">팔로워</span>
+            </div>
+            <!-- 팔로잉 수 -->
+            <div style="cursor: pointer;" onclick="showFollowing()" class="follow-stat">
+              <span style="font-weight: 700; color: #0f1419;" th:text="${followStats != null ? followStats.followingCount : 0}">0</span>
+              <span style="color: #536471; margin-left: 4px;">팔로잉</span>
+            </div>
+          </div>
+          
+          <!-- 팔로우 버튼 (다른 유저 페이지일 때만 표시) -->
+          <div th:if="${isOwner == null or !isOwner}" style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+            <button 
+              id="followButton"
+              th:class="${followStats != null && followStats.isFollowing ? 'follow-btn following' : 'follow-btn'}"
+              th:text="${followStats != null && followStats.isFollowing ? '팔로잉' : '팔로우'}"
+              onclick="toggleFollow()"
+              style="background-color: #0f1419; color: #ffffff; border: none; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color 0.2s;">
+            </button>
             <a 
               th:href="@{/chat/message(receiverEmail=${viewedMember != null ? viewedMember.memberEmail : loggedInMember.memberEmail})}"
-              style="background-color: #1d9bf0; color: #ffffff; border: none; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin: 0 auto; text-decoration: none;">
+              style="background-color: #1d9bf0; color: #ffffff; border: none; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
               <img src="/Message.png" alt="Message" style="width: 20px; height: 20px; object-fit: contain;">
-              메시지 보내기
+              메시지
             </a>
           </div>
         </div>
@@ -495,6 +683,249 @@
               element.parentElement.remove(); // 삭제된 포스트 숨기기
             })
             .catch((error) => console.error("Error:", error));
+        }
+      }
+
+      // 현재 조회 중인 사용자 이메일 가져오기
+      function getViewedEmail() {
+        const viewedEmailElement = document.querySelector('[data-viewed-email]');
+        if (viewedEmailElement) {
+          return viewedEmailElement.getAttribute('data-viewed-email');
+        }
+        // Thymeleaf 변수에서 가져오기
+        const emailSpan = document.querySelector('span[th\\:text*="memberEmail"]');
+        if (emailSpan) {
+          return emailSpan.textContent.trim();
+        }
+        return null;
+      }
+
+      // 팔로우/언팔로우 토글
+      async function toggleFollow() {
+        const viewedEmail = getViewedEmail();
+        if (!viewedEmail) {
+          alert('사용자 정보를 찾을 수 없습니다.');
+          return;
+        }
+
+        const followButton = document.getElementById('followButton');
+        const isFollowing = followButton.classList.contains('following');
+        const url = isFollowing 
+          ? `/api/follow/${encodeURIComponent(viewedEmail)}/unfollow`
+          : `/api/follow/${encodeURIComponent(viewedEmail)}`;
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || '팔로우 처리 중 오류가 발생했습니다.');
+          }
+
+          // 버튼 상태 업데이트
+          if (isFollowing) {
+            followButton.classList.remove('following');
+            followButton.textContent = '팔로우';
+          } else {
+            followButton.classList.add('following');
+            followButton.textContent = '팔로잉';
+          }
+
+          // 통계 업데이트
+          await updateFollowStats();
+        } catch (error) {
+          console.error('Error:', error);
+          alert(error.message);
+        }
+      }
+
+      // 팔로우 통계 업데이트
+      async function updateFollowStats() {
+        const viewedEmail = getViewedEmail();
+        if (!viewedEmail) return;
+
+        try {
+          const response = await fetch(`/api/follow/${encodeURIComponent(viewedEmail)}/stats`);
+          if (response.ok) {
+            const stats = await response.json();
+            // 통계 업데이트 (필요시)
+            const followerCountElement = document.querySelector('.follow-stat:first-child span:first-child');
+            const followingCountElement = document.querySelector('.follow-stat:last-child span:first-child');
+            if (followerCountElement) {
+              followerCountElement.textContent = stats.followerCount || 0;
+            }
+            if (followingCountElement) {
+              followingCountElement.textContent = stats.followingCount || 0;
+            }
+          }
+        } catch (error) {
+          console.error('Error updating stats:', error);
+        }
+      }
+
+      // 팔로워 목록 표시
+      async function showFollowers() {
+        const viewedEmail = getViewedEmail();
+        if (!viewedEmail) return;
+
+        try {
+          const response = await fetch(`/api/follow/${encodeURIComponent(viewedEmail)}/followers`);
+          if (!response.ok) {
+            throw new Error('팔로워 목록을 불러올 수 없습니다.');
+          }
+
+          const followers = await response.json();
+          showFollowModal('팔로워', followers, 'follower');
+        } catch (error) {
+          console.error('Error:', error);
+          alert(error.message);
+        }
+      }
+
+      // 팔로잉 목록 표시
+      async function showFollowing() {
+        const viewedEmail = getViewedEmail();
+        if (!viewedEmail) return;
+
+        try {
+          const response = await fetch(`/api/follow/${encodeURIComponent(viewedEmail)}/following`);
+          if (!response.ok) {
+            throw new Error('팔로잉 목록을 불러올 수 없습니다.');
+          }
+
+          const following = await response.json();
+          showFollowModal('팔로잉', following, 'following');
+        } catch (error) {
+          console.error('Error:', error);
+          alert(error.message);
+        }
+      }
+
+      // 팔로우 모달 표시
+      function showFollowModal(title, items, type) {
+        // 기존 모달이 있으면 제거
+        const existingModal = document.getElementById('followModal');
+        if (existingModal) {
+          existingModal.remove();
+        }
+
+        // 모달 생성
+        const modal = document.createElement('div');
+        modal.id = 'followModal';
+        modal.className = 'modal';
+        modal.style.display = 'block';
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+
+        const modalHeader = document.createElement('div');
+        modalHeader.className = 'modal-header';
+        modalHeader.innerHTML = `
+          <h2>${title}</h2>
+          <span class="close" onclick="closeFollowModal()">&times;</span>
+        `;
+
+        const modalBody = document.createElement('div');
+        modalBody.className = 'modal-body';
+
+        if (items.length === 0) {
+          modalBody.innerHTML = '<div style="padding: 40px; text-align: center; color: #536471;">목록이 비어있습니다.</div>';
+        } else {
+          items.forEach(item => {
+            const email = type === 'follower' ? item.followerEmail : item.followingEmail;
+            const name = type === 'follower' ? item.followerName : item.followingName;
+            const profilePath = type === 'follower' ? item.followerProfilePicturePath : item.followingProfilePicturePath;
+            const isFollowing = item.isFollowing;
+
+            const followItem = document.createElement('div');
+            followItem.className = 'follow-item';
+            followItem.onclick = () => {
+              window.location.href = `/member/profile/${encodeURIComponent(email)}`;
+            };
+
+            followItem.innerHTML = `
+              <img 
+                src="${profilePath || '/images/default-profile.png'}" 
+                alt="${name}" 
+                class="follow-item-img"
+                onerror="this.src='/images/default-profile.png'"
+              />
+              <div class="follow-item-info">
+                <div class="follow-item-name">${name}</div>
+                <div class="follow-item-email">${email}</div>
+              </div>
+              <button 
+                class="follow-item-btn ${isFollowing ? 'following' : 'follow'}"
+                onclick="event.stopPropagation(); toggleFollowItem('${email}', this)"
+                data-email="${email}"
+              >
+                ${isFollowing ? '팔로잉' : '팔로우'}
+              </button>
+            `;
+
+            modalBody.appendChild(followItem);
+          });
+        }
+
+        modalContent.appendChild(modalHeader);
+        modalContent.appendChild(modalBody);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // 모달 외부 클릭 시 닫기
+        modal.onclick = function(event) {
+          if (event.target === modal) {
+            closeFollowModal();
+          }
+        };
+      }
+
+      // 모달 닫기
+      function closeFollowModal() {
+        const modal = document.getElementById('followModal');
+        if (modal) {
+          modal.remove();
+        }
+      }
+
+      // 팔로우 목록에서 개별 팔로우 토글
+      async function toggleFollowItem(email, button) {
+        const isFollowing = button.classList.contains('following');
+        const url = isFollowing 
+          ? `/api/follow/${encodeURIComponent(email)}/unfollow`
+          : `/api/follow/${encodeURIComponent(email)}`;
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('팔로우 처리 중 오류가 발생했습니다.');
+          }
+
+          // 버튼 상태 업데이트
+          if (isFollowing) {
+            button.classList.remove('following');
+            button.textContent = '팔로우';
+          } else {
+            button.classList.add('following');
+            button.textContent = '팔로잉';
+          }
+
+          // 통계 업데이트
+          await updateFollowStats();
+        } catch (error) {
+          console.error('Error:', error);
+          alert(error.message);
         }
       }
       
