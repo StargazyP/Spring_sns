@@ -231,6 +231,13 @@
 
       .comments {
         margin-bottom: 16px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .comments > .comment {
+        width: 100%;
+        box-sizing: border-box;
       }
 
       /* Twitter/X 스타일 댓글 article */
@@ -241,6 +248,9 @@
         gap: 12px;
         transition: background-color 0.2s;
         position: relative;
+        width: 100%;
+        box-sizing: border-box;
+        min-width: 0; /* flexbox에서 overflow 방지 */
       }
 
       .comment:hover {
@@ -546,7 +556,7 @@
         border-bottom: 1px solid #eff3f4;
         width: 100%;
         transition: background-color 0.2s;
-        box-sizing: border-box; /* 12-24 패딩 포함하여 너비 계산 */
+        box-sizing: border-box;
       }
 
       .comment-reply:hover {
@@ -563,13 +573,29 @@
         flex-shrink: 0;
       }
 
-      /* 12-24 답글 컨테이너 (답글과 대댓글 겹침 방지) */
+      /* 답글 컨테이너 - 들여쓰기 적용 */
       .comment-replies-container {
-        margin-top: 0;
+        margin-top: 4px;
         margin-left: 52px; /* 프로필 이미지(40px) + gap(12px)만큼 들여쓰기 */
         padding-left: 0;
         position: relative;
-        width: calc(100% - 52px); /* 부모 너비에서 들여쓰기 제외 */
+        width: calc(100% - 52px);
+        max-width: calc(100% - 52px);
+        box-sizing: border-box;
+      }
+
+      /* 중첩된 대댓글 컨테이너 - 추가 들여쓰기 */
+      .comment-reply .comment-replies-container {
+        margin-left: 52px;
+        width: calc(100% - 52px);
+        max-width: calc(100% - 52px);
+      }
+
+      /* 대댓글 컨테이너 내부 댓글들 */
+      .comment-replies-container > .comment,
+      .comment-replies-container > .comment-reply {
+        width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
       }
 
@@ -580,7 +606,7 @@
         margin-left: 0;
         padding-left: 0;
         width: 100%;
-        padding-bottom: 8px; /* 12-24 하단 여백 추가하여 겹침 방지 */
+        padding-bottom: 4px;
       }
 
       /* 스레드 연결선 (Twitter/X 스타일) */
@@ -589,11 +615,11 @@
         position: absolute;
         left: 20px;
         top: 0;
-        bottom: 8px; /* 12-24 하단 여백 고려 */
+        bottom: 0;
         width: 2px;
         background-color: #eff3f4;
         z-index: 0;
-        pointer-events: none; /* 12-24 클릭 이벤트 방해 방지 */
+        pointer-events: none;
       }
 
       .comment-thread:last-child::before {
@@ -605,13 +631,14 @@
         content: '';
         position: absolute;
         left: 20px;
-        top: 0; /* 12-24 상단에서 시작하도록 수정 */
+        top: 20px;
         width: 20px;
         height: 2px;
         background-color: #eff3f4;
         z-index: 1;
-        pointer-events: none; /* 12-24 클릭 이벤트 방해 방지 */
+        pointer-events: none;
       }
+
 
       /* 긴 댓글 더보기 버튼 */
       .expand-comment-button {
@@ -1425,6 +1452,7 @@
             });
           }
           
+          // 대댓글 컨테이너를 commentDiv에 추가 (contentDiv 다음)
           commentDiv.appendChild(repliesContainer);
         }
         
