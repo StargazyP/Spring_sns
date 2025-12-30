@@ -1462,7 +1462,10 @@
       // DFS로 답글 보기/숨기기 토글
       async function toggleRepliesThreadDFS(commentId, node) {
         const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
-        if (!commentElement) return;
+        if (!commentElement) {
+          console.error("댓글 요소를 찾을 수 없습니다:", commentId);
+          return;
+        }
 
         let repliesContainer = document.getElementById(`replies-${commentId}`);
         const viewButton = commentElement.querySelector(".view-replies-button");
@@ -1482,11 +1485,12 @@
             return;
           }
         } else {
-          // 컨테이너가 없으면 생성
+          // 컨테이너가 없으면 생성 (commentDiv에 추가)
           repliesContainer = document.createElement("div");
           repliesContainer.className = "comment-thread comment-replies-container";
           repliesContainer.id = `replies-${commentId}`;
           repliesContainer.style.display = "block";
+          // commentDiv에 추가 (contentDiv 다음)
           commentElement.appendChild(repliesContainer);
         }
         
@@ -2824,6 +2828,93 @@
           alert("댓글 저장 중 오류가 발생했습니다.");
         }
       }
+
+      // =====================================================
+      // 디버깅 함수들 (브라우저 콘솔에서 사용 가능)
+      // =====================================================
+      
+      // 댓글 트리 구조 확인
+      window.debugCommentTree = function() {
+        console.log("=== 댓글 트리 구조 ===");
+        console.log("전체 댓글 트리:", commentTree);
+        console.log("댓글 개수:", commentTree.length);
+        
+        function printTree(nodes, depth = 0) {
+          nodes.forEach(node => {
+            const indent = "  ".repeat(depth);
+            console.log(`${indent}├─ 댓글 ID: ${node.id}, 작성자: ${node.writerName}, 깊이: ${node.depth}, 자식 수: ${node.children.length}`);
+            if (node.children.length > 0) {
+              printTree(node.children, depth + 1);
+            }
+          });
+        }
+        
+        printTree(commentTree);
+      };
+      
+      // DOM 구조 확인
+      window.debugCommentDOM = function() {
+        console.log("=== 댓글 DOM 구조 ===");
+        const comments = document.querySelectorAll('.comment');
+        console.log(`총 댓글 요소: ${comments.length}개`);
+        
+        comments.forEach((comment, index) => {
+          const commentId = comment.getAttribute('data-comment-id');
+          const depth = comment.getAttribute('data-depth');
+          const isReply = comment.classList.contains('comment-reply');
+          const repliesContainer = comment.querySelector('.comment-replies-container');
+          
+          console.log(`${index + 1}. 댓글 ID: ${commentId}, 깊이: ${depth}, 대댓글: ${isReply ? '예' : '아니오'}, 답글 컨테이너: ${repliesContainer ? '있음' : '없음'}`);
+          
+          if (repliesContainer) {
+            const replyCount = repliesContainer.children.length;
+            const isVisible = repliesContainer.style.display !== 'none';
+            console.log(`   └─ 답글 컨테이너: ${replyCount}개 자식, 표시: ${isVisible ? '예' : '아니오'}`);
+          }
+        });
+      };
+      
+      // 특정 댓글의 구조 확인
+      window.debugCommentById = function(commentId) {
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (!commentElement) {
+          console.error("댓글을 찾을 수 없습니다:", commentId);
+          return;
+        }
+        
+        console.log("=== 댓글 상세 정보 ===");
+        console.log("요소:", commentElement);
+        console.log("클래스:", commentElement.className);
+        console.log("깊이:", commentElement.getAttribute('data-depth'));
+        console.log("너비:", commentElement.offsetWidth);
+        console.log("마진:", {
+          left: window.getComputedStyle(commentElement).marginLeft,
+          top: window.getComputedStyle(commentElement).marginTop
+        });
+        
+        const repliesContainer = document.getElementById(`replies-${commentId}`);
+        if (repliesContainer) {
+          console.log("답글 컨테이너:", repliesContainer);
+          console.log("답글 컨테이너 너비:", repliesContainer.offsetWidth);
+          console.log("답글 컨테이너 마진:", {
+            left: window.getComputedStyle(repliesContainer).marginLeft,
+            top: window.getComputedStyle(repliesContainer).marginTop
+          });
+          console.log("답글 개수:", repliesContainer.children.length);
+        } else {
+          console.log("답글 컨테이너 없음");
+        }
+      };
+      
+      // 페이지 로드 시 자동으로 트리 구조 출력
+      window.addEventListener('load', function() {
+        setTimeout(() => {
+          console.log("💡 디버깅 팁: 브라우저 콘솔에서 다음 함수들을 사용하세요:");
+          console.log("  - debugCommentTree() : 댓글 트리 구조 확인");
+          console.log("  - debugCommentDOM() : DOM 구조 확인");
+          console.log("  - debugCommentById(commentId) : 특정 댓글 상세 확인");
+        }, 2000);
+      });
     </script>
   </body>
 </html>
