@@ -2678,6 +2678,7 @@
           }
 
           const newReply = await response.json();
+          console.log("새 답글 응답:", newReply);
           
           // 답글 폼 닫기
           toggleReplyForm(parentCommentId);
@@ -2693,44 +2694,75 @@
           }
           
           const parentNode = findNodeById(commentTree, parentCommentId);
+          console.log("부모 노드 찾기:", parentNode ? "찾음" : "없음", "parentCommentId:", parentCommentId);
           
           if (parentNode && !currentThreadCommentId) {
-            // 새 답글을 Node로 생성하고 부모에 추가
-            const newNode = new CommentNode(newReply);
-            parentNode.addChild(newNode);
-            
-            // UI 업데이트
-            const parentElement = document.querySelector(`[data-comment-id="${parentCommentId}"]`);
-            if (parentElement) {
-              let repliesContainer = document.getElementById(`replies-${parentCommentId}`);
+            try {
+              // 서버 응답 구조에 맞게 필드 매핑
+              const replyData = {
+                id: newReply.id,
+                comment: newReply.comment,
+                writerName: newReply.writerName || newReply.writer?.name || "(이름 없음)",
+                writerProfile: newReply.writerProfile || newReply.writerProfilePath || newReply.writer?.profilePicturePath || "/images/default-profile.png",
+                createDate: newReply.createDate || newReply.createdDate || new Date().toISOString(),
+                parentCommentId: newReply.parentCommentId || parentCommentId
+              };
               
-              if (!repliesContainer) {
-                // 답글 컨테이너가 없으면 생성
-                repliesContainer = document.createElement("div");
-                repliesContainer.className = "comment-thread comment-replies-container";
-                repliesContainer.id = `replies-${parentCommentId}`;
-                repliesContainer.style.display = "block"; // 새 답글이 추가되면 표시
-                parentElement.appendChild(repliesContainer);
+              console.log("답글 데이터 매핑:", replyData);
+              
+              // 새 답글을 Node로 생성하고 부모에 추가
+              const newNode = new CommentNode(replyData);
+              parentNode.addChild(newNode);
+              console.log("답글 노드 추가 완료, 자식 수:", parentNode.children.length);
+              
+              // UI 업데이트
+              const parentElement = document.querySelector(`[data-comment-id="${parentCommentId}"]`);
+              console.log("부모 요소 찾기:", parentElement ? "찾음" : "없음");
+              
+              if (parentElement) {
+                let repliesContainer = document.getElementById(`replies-${parentCommentId}`);
+                
+                if (!repliesContainer) {
+                  // 답글 컨테이너가 없으면 생성
+                  repliesContainer = document.createElement("div");
+                  repliesContainer.className = "comment-thread comment-replies-container";
+                  repliesContainer.id = `replies-${parentCommentId}`;
+                  repliesContainer.style.display = "block"; // 새 답글이 추가되면 표시
+                  // commentDiv에 추가 (contentDiv 다음)
+                  parentElement.appendChild(repliesContainer);
+                  console.log("답글 컨테이너 생성 완료");
+                }
+                
+                // 답글 컨테이너가 숨겨져 있으면 표시
+                if (repliesContainer.style.display === "none") {
+                  repliesContainer.style.display = "block";
+                }
+                
+                // 새 답글을 DFS로 렌더링
+                renderCommentNodeDFS(repliesContainer, newNode, true, true);
+                console.log("답글 렌더링 완료");
+                
+                // 답글 개수 업데이트
+                const viewButton = parentElement.querySelector(".view-replies-button");
+                if (viewButton) {
+                  const totalReplies = parentNode.getTotalReplyCount();
+                  viewButton.textContent = `답글 ${totalReplies}개 보기`;
+                  console.log("답글 개수 업데이트:", totalReplies);
+                }
+              } else {
+                console.error("부모 요소를 찾을 수 없습니다. 전체 새로고침합니다.");
+                // 부모 요소를 찾을 수 없으면 전체 새로고침
+                await loadComments(currentPostId, 0, false);
               }
-              
-              // 답글 컨테이너가 숨겨져 있으면 표시
-              if (repliesContainer.style.display === "none") {
-                repliesContainer.style.display = "block";
-              }
-              
-              // 새 답글을 DFS로 렌더링
-              renderCommentNodeDFS(repliesContainer, newNode, true, true);
-              
-              // 답글 개수 업데이트
-              const viewButton = parentElement.querySelector(".view-replies-button");
-              if (viewButton) {
-                const totalReplies = parentNode.getTotalReplyCount();
-                viewButton.textContent = `답글 ${totalReplies}개 보기`;
-              }
+            } catch (error) {
+              console.error("답글 UI 업데이트 중 오류:", error);
+              // 오류 발생 시 전체 새로고침
+              await loadComments(currentPostId, 0, false);
             }
           } else {
-            // Thread View인 경우 전체 새로고침
-            await loadComments(currentPostId, 0, true);
+            console.log("Thread View이거나 부모 노드를 찾을 수 없음. 전체 새로고침합니다.");
+            // Thread View인 경우 또는 부모 노드를 찾을 수 없는 경우 전체 새로고침
+            await loadComments(currentPostId, 0, currentThreadCommentId ? true : false);
           }
         } catch (error) {
           console.error("답글 작성 오류:", error);
