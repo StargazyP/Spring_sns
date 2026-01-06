@@ -65,13 +65,13 @@ public class PostResponseDTO {
             this.writer = member.getMemberName(); // HTML 템플릿 호환성
             this.writerEmail = member.getMemberEmail();
             
-            // 프로필 이미지 경로 설정: WebConfig의 /static/** 매핑 활용
-            // 저장 경로: C:\Users\jdajs\spring test\inhatc\src\main\resources\static\{email}\profile.png
-            // 접근 경로: /static/{email}/profile.png
+            // 프로필 이미지 경로 설정: MemberPageController의 /member/Userimgsource/{email} 엔드포인트 활용
+            // 이 방식은 확장자 자동 감지 및 기본 이미지 fallback을 지원
             String email = member.getMemberEmail();
             if (email != null && !email.isEmpty()) {
-                // WebConfig 매핑을 통해 /static/{email}/profile.png로 직접 접근
-                this.profilePicturePath = "/static/" + email + "/profile.png";
+                // MemberPageController의 getUserImage 엔드포인트 사용
+                // 이 엔드포인트는 png, jpg, jpeg 확장자를 자동으로 시도하고, 없으면 기본 이미지를 반환
+                this.profilePicturePath = "/member/Userimgsource/" + email;
             } else {
                 this.profilePicturePath = "/images/default-profile.png";
             }

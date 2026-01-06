@@ -1,6 +1,9 @@
 services:
   app:
-    image: stargazyp2/spring-sns:latest   # ← GitHub Actions로 push한 이미지 사용
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spring-sns:local   # 로컬 빌드 이미지
     container_name: spring-sns-app
     restart: unless-stopped
     ports:
@@ -20,6 +23,8 @@ services:
       - ./uploads:/app/uploads
       # static 리소스도 마운트 (기존 파일 유지)
       - ./src/main/resources/static:/app/src/main/resources/static:ro
+      # templates 디렉토리 마운트 (개발 중 빠른 반영을 위해)
+      - ./src/main/resources/templates:/app/src/main/resources/templates:ro
     depends_on:
       mysql:
         condition: service_healthy

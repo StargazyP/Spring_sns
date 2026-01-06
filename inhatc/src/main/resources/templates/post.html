@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>게시물 상세</title>
+    <link rel="stylesheet" href="/css/sidebar.css" />
     <style>
       * {
         margin: 0;
@@ -22,16 +23,16 @@
       }
 
       .wrapper {
-        max-width: 600px;
+        display: flex;
+        max-width: 1200px;
         margin: 0 auto;
         background-color: #ffffff;
         min-height: 100vh;
-        border-left: 1px solid #eff3f4;
-        border-right: 1px solid #eff3f4;
       }
 
-      /* X 스타일 네비게이션 바 */
-      .navbar {
+
+      /* 상단 헤더 (뒤로가기 버튼) */
+      .top-header {
         position: sticky;
         top: 0;
         background-color: rgba(255, 255, 255, 0.85);
@@ -39,16 +40,10 @@
         border-bottom: 1px solid #eff3f4;
         padding: 16px 20px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 100;
-        min-height: 64px;
-      }
-
-      .navbar-left {
-        display: flex;
         align-items: center;
         gap: 20px;
+        z-index: 100;
+        min-height: 64px;
       }
 
       .back-button {
@@ -70,47 +65,10 @@
         background-color: #f7f9f9;
       }
 
-      .navbar-title {
+      .header-title {
         font-size: 20px;
         font-weight: 700;
         color: #0f1419;
-      }
-
-      .navbar img {
-        cursor: pointer;
-        padding: 10px;
-        border-radius: 50%;
-        transition: background-color 0.2s;
-        object-fit: contain;
-      }
-
-      .navbar img:hover {
-        background-color: #f7f9f9;
-      }
-
-      .navbar img[src="/images/home.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      .navbar img[src="/images/user.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      .navbar img[src="/Message.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      .navbar img[src="/images/alram.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      .navbar img[src="/images/logout.png"] {
-        width: 52px;
-        height: 52px;
       }
 
       /* 게시물 상세 컨테이너 */
@@ -136,6 +94,9 @@
       .post-header-info {
         flex: 1;
         min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
 
       .post-author {
@@ -149,6 +110,36 @@
 
       .post-author:hover {
         text-decoration: underline;
+      }
+
+      /* 팔로우 버튼 스타일 */
+      .follow-btn {
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-left: auto;
+      }
+
+      .follow-btn:hover {
+        background-color: #272c30;
+      }
+
+      .follow-btn.following {
+        background-color: #ffffff;
+        color: #0f1419;
+        border: 1px solid #eff3f4;
+      }
+
+      .follow-btn.following:hover {
+        background-color: #f4212e;
+        color: #ffffff;
+        border-color: #f4212e;
       }
 
       .post-date {
@@ -378,7 +369,7 @@
       .view-replies-button {
         background-color: transparent;
         border: none;
-        color: #065fd4;
+        color: #536471;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
@@ -393,7 +384,7 @@
       }
 
       .view-replies-button:hover {
-        color: #0d0d0d;
+        color: #0f1419;
       }
 
       .view-replies-button::before {
@@ -575,12 +566,12 @@
       }
 
       .reply-submit-button {
-        background-color: #065fd4;
-        color: #ffffff;
+        background-color: #d1d5db;
+        color: #0f1419;
       }
 
       .reply-submit-button:hover {
-        background-color: #0d47a1;
+        background-color: #9ca3af;
       }
 
       .reply-cancel-button {
@@ -616,7 +607,7 @@
       }
 
       .comment-textarea:focus {
-        border-bottom-color: #065fd4;
+        border-bottom-color: #d1d5db;
       }
 
       .comment-textarea::placeholder {
@@ -624,8 +615,8 @@
       }
 
       .comment-submit-button {
-        background-color: #065fd4;
-        color: #ffffff;
+        background-color: #d1d5db;
+        color: #0f1419;
         border: none;
         border-radius: 18px;
         padding: 10px 16px;
@@ -638,7 +629,7 @@
       }
 
       .comment-submit-button:hover {
-        background-color: #0d47a1;
+        background-color: #9ca3af;
       }
 
       .comment-submit-button:disabled {
@@ -660,6 +651,134 @@
         font-size: 15px;
       }
 
+      /* 로그인 모달 스타일 */
+      .login-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-modal-content {
+        background-color: #ffffff;
+        padding: 40px 32px;
+        border-radius: 16px;
+        max-width: 400px;
+        width: 90%;
+        position: relative;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .login-modal-header h2 {
+        font-size: 31px;
+        font-weight: 700;
+        color: #0f1419;
+        margin: 0;
+      }
+
+      .login-modal-close {
+        color: #536471;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .login-modal-close:hover {
+        color: #0f1419;
+      }
+
+      .login-modal-content .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .login-modal-content label {
+        font-size: 15px;
+        font-weight: 500;
+        color: #0f1419;
+      }
+
+      .login-modal-content input[type="email"],
+      .login-modal-content input[type="password"] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #eff3f4;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        color: #0f1419;
+        background-color: #ffffff;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+
+      .login-modal-content input[type="email"]:focus,
+      .login-modal-content input[type="password"]:focus {
+        border-color: #1d9bf0;
+      }
+
+      .login-modal-content button[type="submit"] {
+        width: 100%;
+        padding: 12px 24px;
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 8px;
+      }
+
+      .login-modal-content button[type="submit"]:hover {
+        background-color: #272c30;
+      }
+
+      .login-modal-content .error {
+        color: #f4212e;
+        text-align: center;
+        margin-top: 16px;
+        font-size: 15px;
+        padding: 12px;
+        background-color: #f7f9f9;
+        border-radius: 8px;
+        border: 1px solid #eff3f4;
+      }
+
+      .login-modal-content .signup-link {
+        text-align: center;
+        margin-top: 24px;
+        font-size: 15px;
+        color: #536471;
+      }
+
+      .login-modal-content .signup-link a {
+        color: #1d9bf0;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .login-modal-content .signup-link a:hover {
+        text-decoration: underline;
+      }
+
       /* 반응형 디자인 */
       @media (max-width: 768px) {
         .wrapper {
@@ -672,40 +791,37 @@
   </head>
   <body>
     <div class="wrapper">
-      <!-- Navigation Bar -->
-      <div class="navbar">
-        <div class="navbar-left">
+      <!-- 왼쪽 사이드바 (X.com 스타일) -->
+      <div class="sidebar">
+        <a href="/main" class="sidebar-item">
+          <img src="/images/home.png" alt="home" />
+          <span>Home</span>
+        </a>
+        <a href="/member/mypage" class="sidebar-item">
+          <img src="/images/user.png" alt="User" />
+          <span>User</span>
+        </a>
+        <a href="/chat/message" class="sidebar-item">
+          <img src="/Message.png" alt="Message" />
+          <span>Message</span>
+        </a>
+        <div class="sidebar-item" onclick="location.href='/posts/notifications/page';" style="cursor: pointer;">
+          <img src="/images/alram.png" alt="Alarm" />
+          <span>Alarm</span>
+        </div>
+        <div class="sidebar-item" onclick="document.getElementById('logout').submit();" style="cursor: pointer;">
+          <img src="/images/logout.png" alt="Logout" />
+          <span>Logout</span>
+        </div>
+        <form id="logout" action="/api/members/logout" method="post"></form>
+      </div>
+
+      <!-- 메인 컨텐츠 영역 -->
+      <div class="main-content">
+        <!-- 상단 헤더 (뒤로가기 버튼) -->
+        <div class="top-header">
           <button class="back-button" onclick="goBack()">←</button>
-          <div class="navbar-title">게시물</div>
-        </div>
-        <div style="display: flex; gap: 20px;">
-          <img
-            src="/images/home.png"
-            alt="home"
-            onclick="location.href='/main';"
-          />
-          <img
-            src="/images/user.png"
-            alt="User"
-            onclick="location.href='/member/mypage';"
-          />
-          <img
-            src="/Message.png"
-            alt="Message"
-            onclick="location.href='/chat/message';"
-          />
-          <img
-            src="/images/alram.png"
-            alt="Alarm"
-            onclick="location.href='/main';"
-          />
-          <img
-            src="/images/logout.png"
-            alt="Logout"
-            onclick="document.getElementById('logout').submit();"
-          />
-          <form id="logout" action="/api/members/logout" method="post"></form>
-        </div>
+          <div class="header-title">게시물</div>
       </div>
 
       <!-- 게시물 상세 영역 -->
@@ -727,12 +843,122 @@
           ></textarea>
           <button class="comment-submit-button" onclick="submitComment()">댓글 등록</button>
         </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="login-modal" style="display: none;">
+      <div class="login-modal-content">
+        <div class="login-modal-header">
+          <h2>로그인</h2>
+          <span class="login-modal-close" onclick="closeLoginModal()">&times;</span>
+        </div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="modalEmail">이메일</label>
+            <input type="email" id="modalEmail" name="email" placeholder="이메일을 입력하세요" required>
+          </div>
+          <div class="form-group">
+            <label for="modalPassword">비밀번호</label>
+            <input type="password" id="modalPassword" name="password" placeholder="비밀번호를 입력하세요" required>
+          </div>
+          <div id="loginError" class="error" style="display: none;"></div>
+          <button type="submit">로그인</button>
+        </form>
+        <div class="signup-link">
+          계정이 없으신가요? <a href="/api/members/signup">회원가입</a>
+        </div>
       </div>
     </div>
 
     <script type="text/javascript">
       let currentPostId = null;
       let currentPost = null;
+
+      // 로그인 상태 확인
+      async function checkLoginStatus() {
+        try {
+          const response = await fetch("/api/members/session", {
+            credentials: "include"
+          });
+          if (response.ok) {
+            const data = await response.json();
+            return data.loginEmail != null;
+          }
+        } catch (error) {
+          console.error("로그인 상태 확인 오류:", error);
+        }
+        return false;
+      }
+
+      // 로그인 모달 열기
+      function openLoginModal() {
+        const modal = document.getElementById("loginModal");
+        if (modal) {
+          modal.style.display = "flex";
+        }
+      }
+
+      // 로그인 모달 닫기
+      function closeLoginModal() {
+        const modal = document.getElementById("loginModal");
+        if (modal) {
+          modal.style.display = "none";
+          document.getElementById("loginError").style.display = "none";
+          document.getElementById("loginForm").reset();
+        }
+      }
+
+      // 로그인 처리
+      async function handleLogin(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const errorDiv = document.getElementById("loginError");
+
+        try {
+          const response = await fetch("/api/members/login", {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+          });
+
+          if (response.ok) {
+            closeLoginModal();
+            location.reload();
+          } else {
+            const errorText = await response.text();
+            errorDiv.textContent = errorText || "로그인에 실패했습니다.";
+            errorDiv.style.display = "block";
+          }
+        } catch (error) {
+          errorDiv.textContent = "로그인 중 오류가 발생했습니다.";
+          errorDiv.style.display = "block";
+        }
+      }
+
+      // 모달 외부 클릭 시 닫기
+      window.onclick = function(event) {
+        const modal = document.getElementById("loginModal");
+        if (event.target === modal) {
+          closeLoginModal();
+        }
+      };
+
+      // 댓글 작성 폼 포커스 시 로그인 체크
+      document.addEventListener('DOMContentLoaded', function() {
+        const commentTextarea = document.getElementById('commentContent');
+        if (commentTextarea) {
+          commentTextarea.addEventListener('focus', async function() {
+            const isLoggedIn = await checkLoginStatus();
+            if (!isLoggedIn) {
+              this.blur();
+              openLoginModal();
+            }
+          });
+        }
+      });
 
       // 페이지 로드 시 게시물 정보 가져오기
       window.onload = async function () {
@@ -798,6 +1024,12 @@
         const memberEmail = await getMemberEmail();
         const isOwner = memberEmail && post.writerEmail === memberEmail;
 
+        const followButtonHtml = !isOwner ? `
+          <button class="follow-btn" id="followButton" onclick="toggleFollow()">
+            팔로우
+          </button>
+        ` : '';
+
         const postHtml = `
           <div class="post-header">
             <img 
@@ -806,10 +1038,13 @@
               onerror="this.src='/images/default-profile.png';"
             />
             <div class="post-header-info">
+              <div>
               <a href="/member/profile/${encodeURIComponent(post.writerEmail)}" class="post-author">
                 ${post.writerName || "(이름 없음)"}
               </a>
               <div class="post-date">${new Date(post.createdDate).toLocaleString("ko-KR")}</div>
+              </div>
+              ${followButtonHtml}
             </div>
           </div>
           <div class="post-content">${post.content || ""}</div>
@@ -828,6 +1063,11 @@
         // 좋아요 상태 확인 및 업데이트
         if (memberEmail) {
           checkLikeStatus(post.id, memberEmail);
+        }
+
+        // 팔로우 상태 확인 및 업데이트 (본인 게시글이 아닐 때만)
+        if (!isOwner && memberEmail) {
+          checkFollowStatus(post.writerEmail);
         }
       }
 
@@ -929,6 +1169,107 @@
         } catch (error) {
           console.error("삭제 오류:", error);
           alert("게시물 삭제 중 오류가 발생했습니다.");
+        }
+      }
+
+      // =====================================================
+      // 팔로우 기능
+      // =====================================================
+      // 팔로우 상태 확인
+      async function checkFollowStatus(writerEmail) {
+        try {
+          const memberEmail = await getMemberEmail();
+          if (!memberEmail || memberEmail === writerEmail) {
+            return;
+          }
+
+          const response = await fetch(`/api/follow/${encodeURIComponent(writerEmail)}/status`);
+          if (response.ok) {
+            const isFollowing = await response.json();
+            const button = document.getElementById('followButton');
+            if (button) {
+              updateFollowButton(button, isFollowing);
+            }
+          }
+        } catch (error) {
+          console.error('팔로우 상태 확인 중 오류:', error);
+        }
+      }
+
+      // 팔로우 버튼 상태 업데이트 (텍스트 및 hover 처리)
+      function updateFollowButton(button, isFollowing) {
+        if (isFollowing) {
+          button.classList.add('following');
+          button.textContent = '팔로잉';
+          
+          // hover 이벤트가 없으면 추가 (한 번만)
+          if (!button.hasAttribute('data-hover-bound')) {
+            button.setAttribute('data-hover-bound', 'true');
+            button.addEventListener('mouseenter', function() {
+              if (this.classList.contains('following')) {
+                this.textContent = '언팔로우';
+              }
+            });
+            
+            button.addEventListener('mouseleave', function() {
+              if (this.classList.contains('following')) {
+                this.textContent = '팔로잉';
+              }
+            });
+          }
+        } else {
+          button.classList.remove('following');
+          button.textContent = '팔로우';
+        }
+      }
+
+      // 팔로우/언팔로우 토글
+      async function toggleFollow() {
+        try {
+          if (!currentPost || !currentPost.writerEmail) {
+            alert('게시물 정보를 찾을 수 없습니다.');
+            return;
+          }
+
+          const writerEmail = currentPost.writerEmail;
+          const memberEmail = await getMemberEmail();
+          
+          if (!memberEmail) {
+            alert('로그인이 필요합니다.');
+            return;
+          }
+
+          if (memberEmail === writerEmail) {
+            alert('자기 자신을 팔로우할 수 없습니다.');
+            return;
+          }
+
+          const button = document.getElementById('followButton');
+          if (!button) {
+            return;
+          }
+
+          const isFollowing = button.classList.contains('following');
+          const url = isFollowing 
+            ? `/api/follow/${encodeURIComponent(writerEmail)}/unfollow`
+            : `/api/follow/${encodeURIComponent(writerEmail)}`;
+
+          const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || '팔로우 처리 중 오류가 발생했습니다.');
+          }
+
+          // 버튼 상태 업데이트
+          const newFollowingState = !isFollowing;
+          updateFollowButton(button, newFollowingState);
+        } catch (error) {
+          console.error('팔로우 처리 중 오류:', error);
+          alert(error.message || '팔로우 처리 중 오류가 발생했습니다.');
         }
       }
 
@@ -1096,7 +1437,7 @@
             return;
           }
           
-          // 트리를 평면 배열로 변환 (댓글 + 대댓글 모두 포함)
+          // 트리를 평면 배열로 변환 (댓글 + 대댓글 모두 포함, 순차적으로)
           if (page === 0 || !isThreadView) {
             allCommentsFlat = flattenCommentTree(commentTree);
           }
@@ -1118,12 +1459,12 @@
             return;
           }
           
-          // 페이징 처리: 현재 페이지에 해당하는 댓글들만 렌더링
-          const startIndex = 0; // 첫 페이지는 0부터
-          const endIndex = Math.min(pageSize, allCommentsFlat.length);
+          // 페이징 처리: 평면 배열에서 현재 페이지에 해당하는 댓글들만 렌더링
+          const startIndex = currentPage * pageSize;
+          const endIndex = Math.min(startIndex + pageSize, allCommentsFlat.length);
           const commentsToRender = allCommentsFlat.slice(startIndex, endIndex);
           
-          // 같은 컨테이너에 댓글과 대댓글 모두 렌더링
+          // 같은 컨테이너에 댓글과 대댓글을 순차적으로 렌더링 (card1, card2, card3...)
           commentsToRender.forEach((node) => {
             renderCommentNodeFlat(container, node);
           });
@@ -1133,7 +1474,7 @@
           currentPage = 1; // 다음 페이지는 1부터
           
           // 무한 스크롤 설정
-          setupInfiniteScroll();
+            setupInfiniteScroll();
         } catch (error) {
           console.error("댓글 로드 오류:", error);
         } finally {
@@ -1159,6 +1500,7 @@
         
         const commentsToRender = allCommentsFlat.slice(startIndex, endIndex);
         
+        // 같은 컨테이너에 댓글과 대댓글을 순차적으로 렌더링 (card1, card2, card3...)
         commentsToRender.forEach((node) => {
           renderCommentNodeFlat(container, node);
         });
@@ -1250,11 +1592,7 @@
         commentDiv.setAttribute("data-depth", node.depth);
         commentDiv.setAttribute("data-parent-id", node.parentCommentId || "");
         
-        // depth에 따른 동적 들여쓰기 (Node 연결선 제거)
-        if (node.parentCommentId) {
-          const indent = 56 * node.depth;
-          commentDiv.style.marginLeft = `${indent}px`;
-        }
+        // 들여쓰기 제거 - 모든 댓글/대댓글을 같은 레벨에서 표시
         
         const img = document.createElement("img");
         img.className = "profile-img";
@@ -1317,25 +1655,31 @@
         const actionsDiv = document.createElement("div");
         actionsDiv.className = "comment-actions";
         
-        // 답글 아이콘 버튼
-        const replyIconButton = document.createElement("button");
-        replyIconButton.className = "reply-button";
-        replyIconButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
-        replyIconButton.onclick = function(e) {
-          e.stopPropagation();
-          toggleReplyForm(node.id);
-        };
-        actionsDiv.appendChild(replyIconButton);
-        
-        // 답글 작성 폼
-        const replyForm = createReplyForm(node.id);
+        // 원본 댓글(depth: 0)만 답글 작성 버튼 표시, 대댓글(depth > 0)에는 표시 안 함
+        if (!isReply) {
+          // 답글 아이콘 버튼
+          const replyIconButton = document.createElement("button");
+          replyIconButton.className = "reply-button";
+          replyIconButton.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.15 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></svg>`;
+          replyIconButton.onclick = function(e) {
+            e.stopPropagation();
+            toggleReplyForm(node.id);
+          };
+          actionsDiv.appendChild(replyIconButton);
+        }
         
         contentDiv.appendChild(authorDiv);
         contentDiv.appendChild(textP);
         contentDiv.appendChild(actionsDiv);
         
-        // 대댓글이 있는 경우 "답글 보기" 버튼 추가
-        if (node.children.length > 0) {
+        // 원본 댓글(depth: 0)만 답글 작성 폼 표시
+        if (!isReply) {
+          const replyForm = createReplyForm(node.id);
+          contentDiv.appendChild(replyForm);
+        }
+        
+        // 대댓글이 있는 경우 "답글 보기" 버튼 추가 (원본 댓글만)
+        if (!isReply && node.children.length > 0) {
           const viewRepliesButton = document.createElement("button");
           viewRepliesButton.className = "view-replies-button";
           viewRepliesButton.setAttribute("data-parent-id", node.id);
@@ -1347,34 +1691,68 @@
           };
           contentDiv.appendChild(viewRepliesButton);
         }
-        
-        contentDiv.appendChild(replyForm);
 
         commentDiv.appendChild(img);
         commentDiv.appendChild(contentDiv);
         
-        // 대댓글은 기본적으로 숨김 처리 (CSS 클래스만 사용)
+        // 대댓글은 기본적으로 숨김 처리
+        // 단, 부모가 이미 expanded 상태이면 표시 (모든 depth의 대댓글 포함)
         if (isReply) {
-          commentDiv.classList.add("reply-hidden");
+          // 부모 댓글이 expanded 상태인지 확인 (재귀적으로 상위 부모도 확인)
+          let shouldShow = false;
+          let currentParentId = node.parentCommentId;
+          
+          // 상위 부모들을 재귀적으로 확인
+          while (currentParentId) {
+            const parentElement = container.querySelector(`[data-comment-id="${currentParentId}"]`);
+            if (parentElement && parentElement.classList.contains("expanded")) {
+              shouldShow = true;
+              break;
+            }
+            // 부모의 부모 찾기
+            if (parentElement) {
+              currentParentId = parentElement.getAttribute("data-parent-id");
+            } else {
+              break;
+            }
+          }
+          
+          if (shouldShow) {
+            // 상위 부모가 expanded이면 표시
+            commentDiv.classList.remove("reply-hidden");
+          } else {
+            // 상위 부모가 expanded가 아니면 숨김
+            commentDiv.classList.add("reply-hidden");
+          }
         }
         
         container.appendChild(commentDiv);
       }
 
+      // 댓글과 자식 대댓글을 재귀적으로 같은 container에 렌더링
+      function renderCommentNodeWithChildren(container, node) {
+        if (!node) return;
+        
+        // 현재 노드 렌더링
+        renderCommentNodeFlat(container, node);
+        
+        // 자식 대댓글들도 같은 container에 재귀적으로 렌더링
+        if (node.children && node.children.length > 0) {
+          node.children.forEach((childNode) => {
+            renderCommentNodeWithChildren(container, childNode);
+          });
+        }
+      }
+
       // 클릭 횟수 추적을 위한 Map
       const replyClickCount = new Map();
 
-      // 대댓글 표시/숨김 토글 함수 (2번 클릭 시 버튼 숨김)
+      // 대댓글 표시/숨김 토글 함수 (재귀적으로 모든 depth의 대댓글 처리)
       function toggleRepliesVisibility(parentCommentId, button) {
         const container = document.getElementById("comments");
         if (!container) return;
         
-        // 클릭 횟수 증가
-        const currentCount = replyClickCount.get(parentCommentId) || 0;
-        const newCount = currentCount + 1;
-        replyClickCount.set(parentCommentId, newCount);
-        
-        // 재귀적으로 모든 하위 대댓글 찾기
+        // 재귀적으로 모든 하위 대댓글 찾기 (모든 depth 포함)
         function getAllChildReplies(parentId) {
           const allReplies = [];
           const directChildren = Array.from(container.querySelectorAll(`[data-parent-id="${parentId}"]`));
@@ -1383,14 +1761,13 @@
             allReplies.push(child);
             const childId = child.getAttribute("data-comment-id");
             if (childId) {
+              // 재귀적으로 자식의 자식도 모두 찾기
               allReplies.push(...getAllChildReplies(childId));
             }
           });
           
           return allReplies;
         }
-        
-        const allReplies = getAllChildReplies(parentCommentId);
         
         // 부모 댓글 요소 찾기
         const parentComment = container.querySelector(`[data-comment-id="${parentCommentId}"]`);
@@ -1400,8 +1777,9 @@
         const isExpanded = parentComment.classList.contains("expanded");
         
         if (isExpanded) {
-          // 숨김 처리
+          // 숨김 처리 - 모든 하위 대댓글 숨김
           parentComment.classList.remove("expanded");
+          const allReplies = getAllChildReplies(parentCommentId);
           allReplies.forEach((reply) => {
             reply.classList.add("reply-hidden");
           });
@@ -1411,20 +1789,24 @@
             button.classList.remove("expanded");
           }
         } else {
-          // 표시 처리
+          // 표시 처리 - 모든 하위 대댓글 표시 (재귀적으로)
           parentComment.classList.add("expanded");
+          const allReplies = getAllChildReplies(parentCommentId);
           allReplies.forEach((reply) => {
             reply.classList.remove("reply-hidden");
+            // 자식 대댓글이 있으면 부모도 expanded 상태로 만들어서 표시
+            const replyId = reply.getAttribute("data-comment-id");
+            if (replyId) {
+              const hasChildren = container.querySelectorAll(`[data-parent-id="${replyId}"]`).length > 0;
+              if (hasChildren) {
+                reply.classList.add("expanded");
+              }
+            }
           });
           if (button) {
             button.textContent = `답글 숨기기`;
             button.classList.add("expanded");
           }
-        }
-        
-        // 2번 이상 클릭 시 버튼 숨김
-        if (newCount >= 2 && button) {
-          button.classList.add("hidden");
         }
       }
 
@@ -2749,7 +3131,7 @@
 
         const userEmail = await getMemberEmail();
         if (!userEmail) {
-          alert("로그인이 필요합니다.");
+          openLoginModal();
           return;
         }
 
@@ -2819,7 +3201,7 @@
 
         const userEmail = await getMemberEmail();
         if (!userEmail) {
-          alert("로그인이 필요합니다.");
+          openLoginModal();
           return;
         }
 

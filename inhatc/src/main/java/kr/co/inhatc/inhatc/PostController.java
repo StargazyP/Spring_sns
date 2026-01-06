@@ -108,6 +108,17 @@ public class PostController {
     }
 
     /**
+     * 팔로잉 중인 사용자들의 게시글 조회
+     */
+    @GetMapping("/following")
+    public ResponseEntity<List<PostResponseDTO>> getFollowingPosts(
+            @RequestParam @NotBlank(message = "이메일은 필수입니다.") String email) {
+        List<PostResponseDTO> posts = postService.findFollowingPosts(email);
+        log.debug("팔로잉 게시글 조회: {}개 (사용자: {})", posts.size(), email);
+        return ResponseEntity.ok(posts);
+    }
+
+    /**
      * 게시글 업로드
      */
     @PostMapping("/upload")

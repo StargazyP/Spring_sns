@@ -107,7 +107,7 @@ jobs:
           curl -X POST http://${{ secrets.SSH_HOST }}:3000/webhook \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: push" \
-            -d '{"ref":"refs/heads/main","head_commit":{"id":"${{ github.sha }}"}}' \
+            -d '{"ref":"refs/heads/main","head_commit":{"id":"${{ github.sha }}"},"repository":{"name":"${{ github.repository }}"}}' \
             --max-time 30 \
             --connect-timeout 10 \
             -f || (echo "⚠️ Webhook 호출 실패, SSH 배포로 대체합니다" && exit 1)

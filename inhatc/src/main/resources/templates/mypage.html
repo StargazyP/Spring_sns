@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Page</title>
+    <link rel="stylesheet" href="/css/sidebar.css" />
     <style>
       * {
         margin: 0;
@@ -22,74 +23,49 @@
       }
 
       .wrapper {
-        max-width: 600px;
+        display: flex;
+        max-width: 1200px;
         margin: 0 auto;
         background-color: #ffffff;
         min-height: 100vh;
-        border-left: 1px solid #eff3f4;
-        border-right: 1px solid #eff3f4;
       }
+
 
       .container {
         padding: 12px 16px;
       }
 
-      /* X 스타일 네비게이션 바 */
-      .navbar {
-        position: sticky;
+      /* 알림 배지 스타일 */
+      .notification-badge {
+        position: absolute;
         top: 0;
-        background-color: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid #eff3f4;
-        padding: 16px 20px;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 100;
-        min-height: 64px;
-        gap: 20px;
-      }
-
-      .navbar img {
-        cursor: pointer;
-        padding: 10px;
+        right: 0;
+        background-color: #ef4444;
+        color: white;
         border-radius: 50%;
-        transition: background-color 0.2s;
-        object-fit: contain;
+        min-width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 0 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 101;
+        opacity: 0;
+        transform: scale(0);
+        transition: opacity 0.3s, transform 0.3s;
+        border: 2px solid #ffffff;
       }
-
-      .navbar img:hover {
-        background-color: #f7f9f9;
+      
+      .notification-badge.show {
+        opacity: 1;
+        transform: scale(1);
       }
-
-      /* home.png: 256x256 (1:1) - 30% 증가 */
-      .navbar img[src="/images/home.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      /* user.png: 700x594 (약 1.18:1) - 30% 증가 */
-      .navbar img[src="/images/user.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      /* Message.png: 512x512 (1:1) - 30% 증가 */
-      .navbar img[src="/Message.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      /* alram.png: 700x590 (약 1.19:1) - 30% 증가 */
-      .navbar img[src="/images/alram.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      /* logout.png - 30% 증가 */
-      .navbar img[src="/images/logout.png"] {
-        width: 52px;
-        height: 52px;
+      
+      .notification-icon-container {
+        position: relative;
       }
 
       .profile-img-container {
@@ -297,6 +273,11 @@
       .follow-btn {
         background-color: #0f1419 !important;
         color: #ffffff !important;
+        position: relative;
+      }
+
+      .follow-btn::before {
+        content: '팔로우';
       }
 
       .follow-btn.following {
@@ -305,18 +286,18 @@
         border: 1px solid #eff3f4 !important;
       }
 
+      .follow-btn.following::before {
+        content: '팔로잉';
+      }
+
       .follow-btn.following:hover {
         background-color: #f4212e !important;
         color: #ffffff !important;
         border-color: #f4212e !important;
       }
 
-      .follow-btn.following:hover::after {
+      .follow-btn.following:hover::before {
         content: '언팔로우';
-      }
-
-      .follow-btn.following::after {
-        content: '팔로잉';
       }
 
       /* 모달 스타일 */
@@ -462,46 +443,35 @@
 
   <body>
     <div class="wrapper">
-      <!-- Navigation Bar -->
-      <div class="navbar">
-        <!-- 홈 -->
-        <img
-          src="/images/home.png"
-          alt="home"
-          onclick="location.href='/main';"
-        />
-
-        <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
-        <img
-          src="/images/user.png"
-          alt="User"
-          onclick="location.href='/member/mypage';"
-        />
-
-        <!-- 메시지: Message.png -->
-        <img
-          src="/Message.png"
-          alt="Message"
-          onclick="location.href='/chat/message';"
-        />
-
-        <!-- 알람 / 게시물 확인: /posts/notifications/page -->
-        <img
-          src="/images/alram.png"
-          alt="Alarm"
-          onclick="location.href='/posts/notifications/page';"
-        />
-
-        <!-- 로그아웃 -->
-        <img
-          src="/images/logout.png"
-          alt="Logout"
-          onclick="document.getElementById('logout').submit();"
-        />
+      <!-- 왼쪽 사이드바 (X.com 스타일) -->
+      <div class="sidebar">
+        <a href="/main" class="sidebar-item">
+          <img src="/images/home.png" alt="home" />
+          <span>Home</span>
+        </a>
+        <a href="/member/mypage" class="sidebar-item active">
+          <img src="/images/user.png" alt="User" />
+          <span>User</span>
+        </a>
+        <a href="/chat/message" class="sidebar-item">
+          <img src="/Message.png" alt="Message" />
+          <span>Message</span>
+        </a>
+        <div class="sidebar-item notification-icon-container" onclick="location.href='/posts/notifications/page';" style="cursor: pointer;">
+          <img src="/images/alram.png" alt="Alarm" id="notificationIcon" />
+          <span>Alarm</span>
+          <span id="notificationBadge" class="notification-badge">0</span>
+        </div>
+        <div class="sidebar-item" onclick="document.getElementById('logout').submit();" style="cursor: pointer;">
+          <img src="/images/logout.png" alt="Logout" />
+          <span>Logout</span>
+        </div>
         <form id="logout" action="/api/members/logout" method="post"></form>
       </div>
 
-      <div class="container">
+      <!-- 메인 컨텐츠 영역 -->
+      <div class="main-content">
+        <div class="container">
         <!-- 디버깅 정보 표시 (개발 중에만 표시) -->
         <!-- <div id="debugInfo" style="background-color: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc; font-size: 12px; display: none;">
           <strong>디버깅 정보:</strong><br/>
@@ -556,7 +526,6 @@
             <button 
               id="followButton"
               th:class="${followStats != null && followStats.isFollowing ? 'follow-btn following' : 'follow-btn'}"
-              th:text="${followStats != null && followStats.isFollowing ? '팔로잉' : '팔로우'}"
               onclick="toggleFollow()"
               style="background-color: #0f1419; color: #ffffff; border: none; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color 0.2s;">
             </button>
@@ -569,8 +538,8 @@
           </div>
         </div>
 
-        <!-- 파일 업로드 폼 -->
-        <div id="uploadFormContainer">
+        <!-- 파일 업로드 폼 (본인 페이지일 때만 표시) -->
+        <div id="uploadFormContainer" th:if="${isOwner != null and isOwner == true}">
           <form
             id="profileUploadForm"
             th:action="@{/member/upload}"
@@ -648,9 +617,9 @@
         });
       });
 
-      // 프로필 업로드 폼이 항상 표시되도록 보장
+      // 프로필 업로드 폼이 표시되도록 보장 (본인 페이지일 때만)
       window.onload = function() {
-        // 프로필 업로드 폼이 항상 표시되도록 보장
+        // 프로필 업로드 폼이 존재할 때만 표시 (본인 페이지일 때만 존재)
         const uploadFormContainer = document.getElementById('uploadFormContainer');
         if (uploadFormContainer) {
           uploadFormContainer.style.display = 'block';
@@ -730,10 +699,8 @@
           // 버튼 상태 업데이트
           if (isFollowing) {
             followButton.classList.remove('following');
-            followButton.textContent = '팔로우';
           } else {
             followButton.classList.add('following');
-            followButton.textContent = '팔로잉';
           }
 
           // 통계 업데이트

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>알림</title>
+    <link rel="stylesheet" href="/css/sidebar.css" />
     <style>
       * {
         margin: 0;
@@ -22,16 +23,15 @@
       }
 
       .wrapper {
-        max-width: 600px;
+        display: flex;
+        max-width: 1200px;
         margin: 0 auto;
         background-color: #ffffff;
         min-height: 100vh;
-        border-left: 1px solid #eff3f4;
-        border-right: 1px solid #eff3f4;
       }
 
-      /* X 스타일 네비게이션 바 */
-      .navbar {
+      /* 상단 헤더 (뒤로가기 버튼) */
+      .top-header {
         position: sticky;
         top: 0;
         background-color: rgba(255, 255, 255, 0.85);
@@ -39,16 +39,10 @@
         border-bottom: 1px solid #eff3f4;
         padding: 16px 20px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 100;
-        min-height: 64px;
-      }
-
-      .navbar-left {
-        display: flex;
         align-items: center;
         gap: 20px;
+        z-index: 100;
+        min-height: 64px;
       }
 
       .back-button {
@@ -70,66 +64,34 @@
         background-color: #f7f9f9;
       }
 
-      .navbar-title {
+      .header-title {
         font-size: 20px;
         font-weight: 700;
         color: #0f1419;
       }
 
-      .navbar img {
-        cursor: pointer;
-        padding: 10px;
-        border-radius: 50%;
-        transition: background-color 0.2s;
-        object-fit: contain;
-      }
-
-      .navbar img:hover {
-        background-color: #f7f9f9;
-      }
-
-      .navbar img[src="/images/home.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      .navbar img[src="/images/user.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      .navbar img[src="/Message.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      .navbar img[src="/images/alram.png"] {
-        width: 61px;
-        height: 52px;
-        position: relative;
-      }
-      
-      /* 12-23 알림 배지 스타일 (실시간 알림 수 표시) */
+      /* 알림 배지 스타일 */
       .notification-badge {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 0;
+        right: 0;
         background-color: #ef4444;
         color: white;
         border-radius: 50%;
-        min-width: 20px;
-        height: 20px;
+        min-width: 18px;
+        height: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
-        padding: 0 6px;
+        padding: 0 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         z-index: 101;
         opacity: 0;
         transform: scale(0);
         transition: opacity 0.3s, transform 0.3s;
+        border: 2px solid #ffffff;
       }
       
       .notification-badge.show {
@@ -137,19 +99,8 @@
         transform: scale(1);
       }
       
-      /* 12-23 알림 아이콘 컨테이너 */
       .notification-icon-container {
         position: relative;
-        display: inline-block;
-      }
-      
-      .notification-icon-container img {
-        cursor: pointer;
-      }
-
-      .navbar img[src="/images/logout.png"] {
-        width: 52px;
-        height: 52px;
       }
 
       /* 알림 컨테이너 */
@@ -241,50 +192,44 @@
   </head>
   <body>
     <div class="wrapper">
-      <!-- Navigation Bar -->
-      <div class="navbar">
-        <div class="navbar-left">
-          <button class="back-button" onclick="goBack()">←</button>
-          <div class="navbar-title">알림</div>
+      <!-- 왼쪽 사이드바 (X.com 스타일) -->
+      <div class="sidebar">
+        <a href="/main" class="sidebar-item">
+          <img src="/images/home.png" alt="home" />
+          <span>Home</span>
+        </a>
+        <a href="/member/mypage" class="sidebar-item">
+          <img src="/images/user.png" alt="User" />
+          <span>User</span>
+        </a>
+        <a href="/chat/message" class="sidebar-item">
+          <img src="/Message.png" alt="Message" />
+          <span>Message</span>
+        </a>
+        <div class="sidebar-item notification-icon-container active" onclick="location.href='/posts/notifications/page';" style="cursor: pointer;">
+          <img src="/images/alram.png" alt="Alarm" id="notificationIcon" />
+          <span>Alarm</span>
+          <span id="notificationBadge" class="notification-badge">0</span>
         </div>
-        <div style="display: flex; gap: 20px;">
-          <img
-            src="/images/home.png"
-            alt="home"
-            onclick="location.href='/main';"
-          />
-          <img
-            src="/images/user.png"
-            alt="User"
-            onclick="location.href='/member/mypage';"
-          />
-          <img
-            src="/Message.png"
-            alt="Message"
-            onclick="location.href='/chat/message';"
-          />
-          <!-- 12-23 알람 아이콘 (실시간 알림 수 배지 포함) -->
-          <div class="notification-icon-container">
-            <img
-              src="/images/alram.png"
-              alt="Alarm"
-              onclick="location.href='/posts/notifications/page';"
-              id="notificationIcon"
-            />
-            <span id="notificationBadge" class="notification-badge">0</span>
-          </div>
-          <img
-            src="/images/logout.png"
-            alt="Logout"
-            onclick="document.getElementById('logout').submit();"
-          />
-          <form id="logout" action="/api/members/logout" method="post"></form>
+        <div class="sidebar-item" onclick="document.getElementById('logout').submit();" style="cursor: pointer;">
+          <img src="/images/logout.png" alt="Logout" />
+          <span>Logout</span>
         </div>
+        <form id="logout" action="/api/members/logout" method="post"></form>
       </div>
 
-      <!-- 알림 목록 -->
-      <div id="notificationsContainer" class="notifications-container">
-        <div class="loading">알림을 불러오는 중...</div>
+      <!-- 메인 컨텐츠 영역 -->
+      <div class="main-content">
+        <!-- 상단 헤더 (뒤로가기 버튼) -->
+        <div class="top-header">
+          <button class="back-button" onclick="goBack()">←</button>
+          <div class="header-title">알림</div>
+        </div>
+
+        <!-- 알림 목록 -->
+        <div id="notificationsContainer" class="notifications-container">
+          <div class="loading">알림을 불러오는 중...</div>
+        </div>
       </div>
     </div>
 

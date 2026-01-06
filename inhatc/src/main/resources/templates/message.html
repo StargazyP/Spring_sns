@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>메시지</title>
+    <link rel="stylesheet" href="/css/sidebar.css" />
     <script th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
     <script th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
     <style>
@@ -24,19 +25,14 @@
       }
 
       .wrapper {
-        max-width: 600px;
+        display: flex;
+        max-width: 1200px;
         margin: 0 auto;
         background-color: #ffffff;
-        height: 100vh; /* 고정 높이로 변경 */
-        border-left: 1px solid #eff3f4;
-        border-right: 1px solid #eff3f4;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden; /* wrapper 자체는 스크롤하지 않음 */
+        min-height: 100vh;
       }
 
-      /* X 스타일 네비게이션 바 */
-      .navbar {
+      .chat-header {
         position: sticky;
         top: 0;
         background-color: rgba(255, 255, 255, 0.85);
@@ -44,63 +40,11 @@
         border-bottom: 1px solid #eff3f4;
         padding: 16px 20px;
         display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 100;
-        min-height: 64px;
-        gap: 20px;
-      }
-
-      .navbar img {
-        cursor: pointer;
-        padding: 10px;
-        border-radius: 50%;
-        transition: background-color 0.2s;
-        object-fit: contain;
-      }
-
-      .navbar img:hover {
-        background-color: #f7f9f9;
-      }
-
-      /* home.png: 256x256 (1:1) - 30% 증가 */
-      .navbar img[src="/images/home.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      /* user.png: 700x594 (약 1.18:1) - 30% 증가 */
-      .navbar img[src="/images/user.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      /* Message.png: 512x512 (1:1) - 30% 증가 */
-      .navbar img[src="/Message.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      /* alram.png: 700x590 (약 1.19:1) - 30% 증가 */
-      .navbar img[src="/images/alram.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      /* logout.png - 30% 증가 */
-      .navbar img[src="/images/logout.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      .chat-header {
-        padding: 16px;
-        border-bottom: 1px solid #eff3f4;
-        background-color: #ffffff;
-        display: flex;
         align-items: center;
         gap: 12px;
-        flex-shrink: 0; /* 높이가 줄어들지 않도록 */
+        flex-shrink: 0;
+        z-index: 100;
+        min-height: 64px;
       }
 
       .chat-header h2 {
@@ -136,7 +80,7 @@
         flex: 1;
         min-height: 0;
         overflow: hidden;
-        height: 100%;
+        height: calc(100vh - 0px);
       }
 
       /* 대화 상대 목록 스타일 */
@@ -215,9 +159,9 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        min-height: 0; /* flex 컨테이너에서 스크롤이 작동하도록 */
-        overflow: hidden; /* 자식 요소의 스크롤만 허용 */
-        height: 100%; /* 부모의 높이를 모두 사용 */
+        min-height: 0;
+        overflow: hidden;
+        height: calc(100vh - 0px);
       }
 
       .chat-messages {
@@ -440,45 +384,33 @@
   </head>
   <body>
     <div class="wrapper">
-      <!-- Navigation Bar -->
-      <div class="navbar">
-        <!-- 홈 -->
-        <img
-          src="/images/home.png"
-          alt="home"
-          onclick="location.href='/main';"
-        />
-
-        <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
-        <img
-          src="/images/user.png"
-          alt="User"
-          onclick="location.href='/member/mypage';"
-        />
-
-        <!-- 메시지: Message.png -->
-        <img
-          src="/Message.png"
-          alt="Message"
-          onclick="location.href='/chat/message';"
-        />
-
-        <!-- 알람 / 게시물 확인 -->
-        <img
-          src="/images/alram.png"
-          alt="Alarm"
-          onclick="location.href='/posts/notifications/page';"
-          id="notificationIcon"
-        />
-
-        <!-- 로그아웃 -->
-        <img
-          src="/images/logout.png"
-          alt="Logout"
-          onclick="document.getElementById('logout').submit();"
-        />
+      <!-- 왼쪽 사이드바 -->
+      <div class="sidebar">
+        <a href="/main" class="sidebar-item">
+          <img src="/images/home.png" alt="home" />
+          <span>Home</span>
+        </a>
+        <a href="/member/mypage" class="sidebar-item">
+          <img src="/images/user.png" alt="User" />
+          <span>User</span>
+        </a>
+        <a href="/chat/message" class="sidebar-item active">
+          <img src="/Message.png" alt="Message" />
+          <span>Message</span>
+        </a>
+        <div class="sidebar-item" onclick="location.href='/posts/notifications/page';" style="cursor: pointer;">
+          <img src="/images/alram.png" alt="Alarm" />
+          <span>Alarm</span>
+        </div>
+        <div class="sidebar-item" onclick="document.getElementById('logout').submit();" style="cursor: pointer;">
+          <img src="/images/logout.png" alt="Logout" />
+          <span>Logout</span>
+        </div>
         <form id="logout" action="/api/members/logout" method="post"></form>
       </div>
+
+      <!-- 메인 컨텐츠 영역 -->
+      <div class="main-content">
 
       <!-- 목록 모드 -->
       <div id="listMode" th:if="${isChatMode == null or isChatMode == false}">
@@ -528,6 +460,7 @@
             <div id="imagePreviewContainer" style="display: none;"></div>
           </div>
         </div>
+      </div>
       </div>
     </div>
 

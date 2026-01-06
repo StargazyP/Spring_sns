@@ -85,12 +85,14 @@ app.post('/webhook', (req, res) => {
           } &&
           # stash한 변경사항 복원 (이미지 파일 등)
           git stash pop || true &&
-          echo "🐳 Docker 이미지 업데이트..." &&
+          echo "🐳 원격 Docker 이미지 업데이트..." &&
           cd "${paths.composePath}" &&
-          docker compose pull app 2>/dev/null || docker-compose pull app 2>/dev/null || echo "⚠️ docker compose pull 실패" &&
-          docker compose up -d --build 2>/dev/null || docker-compose up -d --build 2>/dev/null &&
-          docker compose ps 2>/dev/null || docker-compose ps 2>/dev/null &&
-          echo "✅ 배포 완료!" &&
+          # docker-compose.prod.yml 사용하여 원격 이미지 pull 및 실행
+          docker compose -f docker-compose.prod.yml pull app 2>/dev/null || docker-compose -f docker-compose.prod.yml pull app 2>/dev/null || echo "⚠️ docker compose pull 실패" &&
+          docker compose -f docker-compose.prod.yml down 2>/dev/null || docker-compose -f docker-compose.prod.yml down 2>/dev/null || true &&
+          docker compose -f docker-compose.prod.yml up -d 2>/dev/null || docker-compose -f docker-compose.prod.yml up -d 2>/dev/null &&
+          docker compose -f docker-compose.prod.yml ps 2>/dev/null || docker-compose -f docker-compose.prod.yml ps 2>/dev/null &&
+          echo "✅ 원격 이미지 배포 완료!" &&
           exit 0
         fi
       `;

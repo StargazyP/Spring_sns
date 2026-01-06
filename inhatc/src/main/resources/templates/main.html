@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>게시물 관리</title>
+    <link rel="stylesheet" href="/css/sidebar.css" />
     <style>
       * {
         margin: 0;
@@ -22,93 +23,79 @@
       }
 
       .wrapper {
-        max-width: 600px;
+        display: flex;
+        max-width: 1200px;
         margin: 0 auto;
         background-color: #ffffff;
         min-height: 100vh;
-        border-left: 1px solid #eff3f4;
-        border-right: 1px solid #eff3f4;
+        justify-content: center;
+        align-items: flex-start;
+        position: relative;
       }
+
 
       .container {
         padding: 12px 16px;
         border-bottom: 1px solid #eff3f4;
       }
 
-      /* X 스타일 네비게이션 바 */
-      .navbar {
+      /* 상단 탭 네비게이션 (추천/팔로잉) */
+      .top-tabs {
         position: sticky;
         top: 0;
         background-color: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
         border-bottom: 1px solid #eff3f4;
-        padding: 16px 20px;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
         z-index: 100;
-        min-height: 64px;
-        gap: 20px;
+        display: flex;
       }
 
-      .navbar img {
+      .tab-button {
+        flex: 1;
+        padding: 16px;
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        font-size: 15px;
+        font-weight: 500;
+        color: #536471;
         cursor: pointer;
-        padding: 10px;
-        border-radius: 50%;
-        transition: background-color 0.2s;
-        object-fit: contain;
+        transition: all 0.2s;
+        text-align: center;
       }
 
-      .navbar img:hover {
+      .tab-button:hover {
         background-color: #f7f9f9;
       }
 
-      /* home.png: 256x256 (1:1) - 30% 증가 */
-      .navbar img[src="/images/home.png"] {
-        width: 52px;
-        height: 52px;
+      .tab-button.active {
+        color: #0f1419;
+        font-weight: 700;
+        border-bottom-color: #d1d5db;
       }
 
-      /* user.png: 700x594 (약 1.18:1) - 30% 증가 */
-      .navbar img[src="/images/user.png"] {
-        width: 61px;
-        height: 52px;
-      }
-
-      /* Message.png: 512x512 (1:1) - 30% 증가 */
-      .navbar img[src="/Message.png"] {
-        width: 52px;
-        height: 52px;
-      }
-
-      /* alram.png: 700x590 (약 1.19:1) - 30% 증가 */
-      .navbar img[src="/images/alram.png"] {
-        width: 61px;
-        height: 52px;
-        position: relative;
-      }
-      
-      /* 12-23 알림 배지 스타일 (실시간 알림 수 표시) */
+      /* 알림 배지 스타일 */
       .notification-badge {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 0;
+        right: 0;
         background-color: #ef4444;
         color: white;
         border-radius: 50%;
-        min-width: 20px;
-        height: 20px;
+        min-width: 18px;
+        height: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
-        padding: 0 6px;
+        padding: 0 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         z-index: 101;
         opacity: 0;
         transform: scale(0);
         transition: opacity 0.3s, transform 0.3s;
+        border: 2px solid #ffffff;
       }
       
       .notification-badge.show {
@@ -118,17 +105,6 @@
       
       .notification-icon-container {
         position: relative;
-        display: inline-block;
-      }
-      
-      .notification-icon-container img {
-        cursor: pointer;
-      }
-
-      /* logout.png - 30% 증가 */
-      .navbar img[src="/images/logout.png"] {
-        width: 52px;
-        height: 52px;
       }
 
       /* 게시물 작성 폼 */
@@ -247,6 +223,36 @@
 
       .card-header a:hover {
         text-decoration: underline;
+      }
+
+      /* 팔로우 버튼 스타일 */
+      .follow-btn {
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-left: auto;
+      }
+
+      .follow-btn:hover {
+        background-color: #272c30;
+      }
+
+      .follow-btn.following {
+        background-color: #ffffff;
+        color: #0f1419;
+        border: 1px solid #eff3f4;
+      }
+
+      .follow-btn.following:hover {
+        background-color: #f4212e;
+        color: #ffffff;
+        border-color: #f4212e;
       }
 
       .card-body {
@@ -631,6 +637,134 @@
         background-color: #d91e2e;
       }
 
+      /* 로그인 모달 스타일 */
+      .login-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-modal-content {
+        background-color: #ffffff;
+        padding: 40px 32px;
+        border-radius: 16px;
+        max-width: 400px;
+        width: 90%;
+        position: relative;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .login-modal-header h2 {
+        font-size: 31px;
+        font-weight: 700;
+        color: #0f1419;
+        margin: 0;
+      }
+
+      .login-modal-close {
+        color: #536471;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .login-modal-close:hover {
+        color: #0f1419;
+      }
+
+      .login-modal-content .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .login-modal-content label {
+        font-size: 15px;
+        font-weight: 500;
+        color: #0f1419;
+      }
+
+      .login-modal-content input[type="email"],
+      .login-modal-content input[type="password"] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #eff3f4;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        color: #0f1419;
+        background-color: #ffffff;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+
+      .login-modal-content input[type="email"]:focus,
+      .login-modal-content input[type="password"]:focus {
+        border-color: #1d9bf0;
+      }
+
+      .login-modal-content button[type="submit"] {
+        width: 100%;
+        padding: 12px 24px;
+        background-color: #0f1419;
+        color: #ffffff;
+        border: none;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 8px;
+      }
+
+      .login-modal-content button[type="submit"]:hover {
+        background-color: #272c30;
+      }
+
+      .login-modal-content .error {
+        color: #f4212e;
+        text-align: center;
+        margin-top: 16px;
+        font-size: 15px;
+        padding: 12px;
+        background-color: #f7f9f9;
+        border-radius: 8px;
+        border: 1px solid #eff3f4;
+      }
+
+      .login-modal-content .signup-link {
+        text-align: center;
+        margin-top: 24px;
+        font-size: 15px;
+        color: #536471;
+      }
+
+      .login-modal-content .signup-link a {
+        color: #1d9bf0;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .login-modal-content .signup-link a:hover {
+        text-decoration: underline;
+      }
+
       /* 반응형 디자인 */
       @media (max-width: 768px) {
         .wrapper {
@@ -655,50 +789,45 @@
   </head>
   <body>
     <div class="wrapper">
-      <!-- Navigation Bar -->
-      <div class="navbar">
-        <!-- 홈: 이제 /member/view 대신 /api/posts 로 이동 -->
-        <img
-          src="/images/home.png"
-          alt="home"
-          onclick="location.href='/main';"
-        />
-
-        <!-- 사용자 이미지 클릭: session 기반으로 MyPage로 이동 -->
-        <img
-          src="/images/user.png"
-          alt="User"
-          onclick="location.href='/member/mypage';"
-        />
-
-        <!-- 메시지: Message.png -->
-        <img
-          src="/Message.png"
-          alt="Message"
-          onclick="location.href='/chat/message';"
-        />
-
-        <!-- 12-23 알람 / 게시물 확인: /posts/notifications/page (실시간 알림 수 배지 포함) -->
-        <div class="notification-icon-container">
-          <img
-            src="/images/alram.png"
-            alt="Alarm"
-            onclick="location.href='/posts/notifications/page';"
-            id="notificationIcon"
-          />
+      <!-- 왼쪽 사이드바 (X.com 스타일) -->
+      <div class="sidebar">
+        <a href="/main" class="sidebar-item active">
+          <img src="/images/home.png" alt="home" />
+          <span>Home</span>
+        </a>
+        <a href="/member/mypage" class="sidebar-item">
+          <img src="/images/user.png" alt="User" />
+          <span>User</span>
+        </a>
+        <a href="/chat/message" class="sidebar-item">
+          <img src="/Message.png" alt="Message" />
+          <span>Message</span>
+        </a>
+        <div class="sidebar-item notification-icon-container" onclick="location.href='/posts/notifications/page';" style="cursor: pointer;">
+          <img src="/images/alram.png" alt="Alarm" id="notificationIcon" />
+          <span>Alarm</span>
           <span id="notificationBadge" class="notification-badge">0</span>
         </div>
-
-        <!-- 로그아웃: /member/logout 대신 /api/logout -->
-        <img
-          src="/images/logout.png"
-          alt="Logout"
-          onclick="document.getElementById('logout').submit();"
-        />
+        <div class="sidebar-item" onclick="document.getElementById('logout').submit();" style="cursor: pointer;">
+          <img src="/images/logout.png" alt="Logout" />
+          <span>Logout</span>
+        </div>
         <form id="logout" action="/api/members/logout" method="post"></form>
       </div>
 
-      <div class="container">
+      <!-- 메인 컨텐츠 영역 -->
+      <div class="main-content">
+        <!-- 상단 탭 (추천/팔로잉) -->
+        <div class="top-tabs">
+          <button class="tab-button active" id="forYouTab" onclick="switchTab('forYou')">
+            추천
+          </button>
+          <button class="tab-button" id="followingTab" onclick="switchTab('following')">
+            팔로잉
+          </button>
+        </div>
+
+        <div class="container">
         <p id="sessionInfo"></p>
         <form id="postForm">
           <div>
@@ -758,6 +887,32 @@
         </div>
       </div>
     </div>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="login-modal" style="display: none;">
+      <div class="login-modal-content">
+        <div class="login-modal-header">
+          <h2>로그인</h2>
+          <span class="login-modal-close" onclick="closeLoginModal()">&times;</span>
+        </div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="modalEmail">이메일</label>
+            <input type="email" id="modalEmail" name="email" placeholder="이메일을 입력하세요" required>
+          </div>
+          <div class="form-group">
+            <label for="modalPassword">비밀번호</label>
+            <input type="password" id="modalPassword" name="password" placeholder="비밀번호를 입력하세요" required>
+          </div>
+          <div id="loginError" class="error" style="display: none;"></div>
+          <button type="submit">로그인</button>
+        </form>
+        <div class="signup-link">
+          계정이 없으신가요? <a href="/api/members/signup">회원가입</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Toggle Container -->
     <!-- <div class="toggle-container">
       <div class="toggle-list">
@@ -871,6 +1026,20 @@
         }
       }
       
+      // 게시물 작성 폼 포커스 시 로그인 체크
+      document.addEventListener('DOMContentLoaded', function() {
+        const contentTextarea = document.getElementById('content');
+        if (contentTextarea) {
+          contentTextarea.addEventListener('focus', async function() {
+            const isLoggedIn = await checkLoginStatus();
+            if (!isLoggedIn) {
+              this.blur();
+              openLoginModal();
+            }
+          });
+        }
+      });
+
       // =====================================================
       // 초기 실행
       // =====================================================
@@ -1028,8 +1197,17 @@
         console.log("[fetchPosts] 함수 실행됨");
 
         try {
-          console.log("/api/posts 로 요청 시작");
-          const response = await fetch("/api/posts");
+          // 탭에 따라 다른 API 호출
+          let url = "/api/posts";
+          if (currentTab === 'following') {
+            const memberEmail = await getMemberEmail();
+            if (memberEmail) {
+              url = `/api/posts/following?email=${encodeURIComponent(memberEmail)}`;
+            }
+          }
+          
+          console.log(`${url} 로 요청 시작`);
+          const response = await fetch(url);
 
           console.log("응답 상태 코드:", response.status);
 
@@ -1064,7 +1242,10 @@
 
           if (posts.length === 0) {
             console.log("게시물이 없습니다.");
-            postContainer.innerHTML = "<div style='padding: 20px; text-align: center; color: #536471;'>게시물이 없습니다.</div>";
+            const emptyMessage = currentTab === 'following' 
+              ? "팔로잉 중인 사용자의 게시물이 없습니다." 
+              : "게시물이 없습니다.";
+            postContainer.innerHTML = `<div style='padding: 20px; text-align: center; color: #536471;'>${emptyMessage}</div>`;
             return;
           }
 
@@ -1112,7 +1293,7 @@
             const cardContent = document.createElement("div");
             cardContent.className = "card-content";
 
-            // 2. 사용자 이름
+            // 2. 사용자 이름 및 팔로우 버튼
             const header = document.createElement("div");
             header.className = "card-header";
             const authorLink = document.createElement("a");
@@ -1122,6 +1303,21 @@
             };
             authorLink.textContent = post.writerName || "(이름 없음)";
             header.appendChild(authorLink);
+            
+            // 팔로우 버튼 추가 (본인 게시글이 아닐 때만)
+            if (memberEmail && post.writerEmail !== memberEmail) {
+              const followButton = document.createElement("button");
+              followButton.className = "follow-btn";
+              followButton.setAttribute("data-writer-email", post.writerEmail);
+              followButton.onclick = function(e) {
+                e.stopPropagation();
+                toggleFollow(post.writerEmail, followButton);
+              };
+              // 팔로우 상태 확인
+              checkFollowStatus(post.writerEmail, followButton);
+              header.appendChild(followButton);
+            }
+            
             console.log("작성자:", authorLink.textContent);
 
             // 3. 날짜
@@ -1190,6 +1386,76 @@
       // 🔹 게시물 저장
       // =====================================================
 
+      // 로그인 상태 확인
+      async function checkLoginStatus() {
+        try {
+          const response = await fetch("/api/members/session", {
+            credentials: "include"
+          });
+          if (response.ok) {
+            const data = await response.json();
+            return data.loginEmail != null;
+          }
+        } catch (error) {
+          console.error("로그인 상태 확인 오류:", error);
+        }
+        return false;
+      }
+
+      // 로그인 모달 열기
+      function openLoginModal() {
+        const modal = document.getElementById("loginModal");
+        if (modal) {
+          modal.style.display = "flex";
+        }
+      }
+
+      // 로그인 모달 닫기
+      function closeLoginModal() {
+        const modal = document.getElementById("loginModal");
+        if (modal) {
+          modal.style.display = "none";
+          document.getElementById("loginError").style.display = "none";
+          document.getElementById("loginForm").reset();
+        }
+      }
+
+      // 로그인 처리
+      async function handleLogin(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const errorDiv = document.getElementById("loginError");
+
+        try {
+          const response = await fetch("/api/members/login", {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+          });
+
+          if (response.ok) {
+            closeLoginModal();
+            location.reload();
+          } else {
+            const errorText = await response.text();
+            errorDiv.textContent = errorText || "로그인에 실패했습니다.";
+            errorDiv.style.display = "block";
+          }
+        } catch (error) {
+          errorDiv.textContent = "로그인 중 오류가 발생했습니다.";
+          errorDiv.style.display = "block";
+        }
+      }
+
+      // 모달 외부 클릭 시 닫기
+      window.onclick = function(event) {
+        const modal = document.getElementById("loginModal");
+        if (event.target === modal) {
+          closeLoginModal();
+        }
+      };
+
       async function savePost(event) {
         event.preventDefault(); // 기본 form 제출 막기
 
@@ -1197,11 +1463,18 @@
         const fileInput = document.getElementById("fileUpload");
         const file = fileInput.files[0];
 
+        // 로그인 상태 확인
+        const isLoggedIn = await checkLoginStatus();
+        if (!isLoggedIn) {
+          openLoginModal();
+          return;
+        }
+
         // 세션에서 로그인 이메일 가져오기
         const userEmail = sessionStorage.getItem("loginEmail");
 
         if (!userEmail) {
-          alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+          openLoginModal();
           return;
         }
 
@@ -1306,7 +1579,7 @@
 
         const userEmail = await getMemberEmail();
         if (!userEmail) {
-          alert("로그인이 필요합니다.");
+          openLoginModal();
           return;
         }
 
@@ -1436,6 +1709,116 @@
           });
         }
       });
+
+      // =====================================================
+      // 🔹 탭 전환 기능 (추천/팔로잉)
+      // =====================================================
+      let currentTab = 'forYou'; // 기본값: 추천
+
+      function switchTab(tab) {
+        currentTab = tab;
+        
+        // 탭 버튼 활성화 상태 변경
+        const forYouTab = document.getElementById('forYouTab');
+        const followingTab = document.getElementById('followingTab');
+        
+        if (tab === 'forYou') {
+          forYouTab.classList.add('active');
+          followingTab.classList.remove('active');
+        } else {
+          followingTab.classList.add('active');
+          forYouTab.classList.remove('active');
+        }
+        
+        // 게시글 다시 로드
+        fetchPosts();
+      }
+
+      // =====================================================
+      // 🔹 팔로우 기능
+      // =====================================================
+      // 팔로우 상태 확인
+      async function checkFollowStatus(writerEmail, button) {
+        try {
+          const memberEmail = await getMemberEmail();
+          if (!memberEmail || memberEmail === writerEmail) {
+            return;
+          }
+
+          const response = await fetch(`/api/follow/${encodeURIComponent(writerEmail)}/status`);
+          if (response.ok) {
+            const isFollowing = await response.json();
+            updateFollowButton(button, isFollowing);
+          }
+        } catch (error) {
+          console.error('팔로우 상태 확인 중 오류:', error);
+        }
+      }
+
+      // 팔로우 버튼 상태 업데이트 (텍스트 및 hover 처리)
+      function updateFollowButton(button, isFollowing) {
+        if (isFollowing) {
+          button.classList.add('following');
+          button.textContent = '팔로잉';
+          
+          // hover 이벤트가 없으면 추가 (한 번만)
+          if (!button.hasAttribute('data-hover-bound')) {
+            button.setAttribute('data-hover-bound', 'true');
+            button.addEventListener('mouseenter', function() {
+              if (this.classList.contains('following')) {
+                this.textContent = '언팔로우';
+              }
+            });
+            
+            button.addEventListener('mouseleave', function() {
+              if (this.classList.contains('following')) {
+                this.textContent = '팔로잉';
+              }
+            });
+          }
+        } else {
+          button.classList.remove('following');
+          button.textContent = '팔로우';
+        }
+      }
+
+      // 팔로우/언팔로우 토글
+      async function toggleFollow(writerEmail, button) {
+        try {
+          const memberEmail = await getMemberEmail();
+          if (!memberEmail) {
+            alert('로그인이 필요합니다.');
+            return;
+          }
+
+          if (memberEmail === writerEmail) {
+            alert('자기 자신을 팔로우할 수 없습니다.');
+            return;
+          }
+
+          const isFollowing = button.classList.contains('following');
+          const url = isFollowing 
+            ? `/api/follow/${encodeURIComponent(writerEmail)}/unfollow`
+            : `/api/follow/${encodeURIComponent(writerEmail)}`;
+
+          const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || '팔로우 처리 중 오류가 발생했습니다.');
+          }
+
+          // 버튼 상태 업데이트
+          const newFollowingState = !isFollowing;
+          updateFollowButton(button, newFollowingState);
+        } catch (error) {
+          console.error('팔로우 처리 중 오류:', error);
+          alert(error.message || '팔로우 처리 중 오류가 발생했습니다.');
+        }
+      }
 
       // =====================================================
       // 🔹 채팅 입력 이벤트 (마지막에 배치, 요소가 존재하는 경우에만)

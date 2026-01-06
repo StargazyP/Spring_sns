@@ -1,0 +1,101 @@
+/* 왼쪽 사이드바 (타원형 스타일) */
+.sidebar {
+  position: fixed;
+  left: calc(50% - 300px - 5px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: auto;
+  min-height: 300px;
+  max-height: 80vh;
+  border-radius: 30px;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow-y: auto;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .sidebar {
+    left: calc(50% - 300px - 5px);
+  }
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    left: 20px;
+  }
+}
+
+.sidebar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  position: relative;
+  gap: 4px;
+}
+
+.sidebar-item:hover {
+  background-color: #f7f9f9;
+}
+
+.sidebar-item img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.sidebar-item span {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #0f1419;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.sidebar-item.active {
+  background-color: #e5e7eb;
+}
+
+.sidebar-item.active img {
+  filter: none;
+  -webkit-filter: none;
+}
+
+.sidebar-item.active span {
+  color: #0f1419;
+}
+
+.sidebar-item.active:hover {
+  background-color: #d1d5db;
+}
+
+/* 메인 컨텐츠 영역 (사이드바와 함께 사용) */
+.main-content {
+  margin-left: auto;
+  margin-right: auto;
+  flex: 1;
+  max-width: 600px;
+  min-width: 0;
+  border-left: 1px solid #eff3f4;
+  border-right: 1px solid #eff3f4;
+  background-color: #ffffff;
+  position: relative;
+  left: 0;
+}
+

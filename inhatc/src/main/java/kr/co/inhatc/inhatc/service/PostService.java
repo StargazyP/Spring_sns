@@ -3,6 +3,7 @@ package kr.co.inhatc.inhatc.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public class PostService {
     private final MemberRepository memberRepository;
     private final LikeRepository likeRepository;
     private final NotificationService notificationService;
+    private final FollowService followService;
     
     @Value("${app.upload.posts-dir}")
     private String postsUploadDir;
@@ -44,11 +46,13 @@ public class PostService {
     public PostService(PostRepository postRepository, 
                        MemberRepository memberRepository, 
                        LikeRepository likeRepository,
-                       @Lazy NotificationService notificationService) {
+                       @Lazy NotificationService notificationService,
+                       @Lazy FollowService followService) {
         this.postRepository = postRepository;
         this.memberRepository = memberRepository;
         this.likeRepository = likeRepository;
         this.notificationService = notificationService;
+        this.followService = followService;
     }
 
     /**
@@ -105,6 +109,42 @@ public class PostService {
         return posts.stream()
                 .filter(post -> post.getDeleteYn() == 'N') // 삭제되지 않은 게시글만
                 .map(post -> PostResponseDTO.fromEntity(post, member))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * ✅ 팔로잉 중인 사용자들의 게시글 조회
+     */
+    public List<PostResponseDTO> findFollowingPosts(String memberEmail) {
+        // 팔로잉 중인 사용자 목록 가져오기
+        List<kr.co.inhatc.inhatc.dto.FollowDTO> followingList = followService.getFollowing(memberEmail, memberEmail);
+        
+        if (followingList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 팔로잉 중인 사용자들의 이메일 수집
+        List<String> followingEmails = followingList.stream()
+                .map(follow -> follow.getFollowingEmail() != null ? follow.getFollowingEmail() : follow.getFollowerEmail())
+                .filter(email -> email != null)
+                .collect(Collectors.toList());
+
+        // 본인 이메일도 추가 (자신의 게시글도 포함)
+        followingEmails.add(memberEmail);
+
+        // JOIN FETCH로 Comments를 한 번에 조회
+        List<PostEntity> posts = postRepository.findByMemberEmailsWithComments(followingEmails);
+
+        // Member 정보를 Map으로 변환하여 O(1) 조회
+        List<MemberEntity> members = memberRepository.findByMemberEmailIn(followingEmails);
+        Map<String, MemberEntity> memberMap = members.stream()
+                .collect(Collectors.toMap(MemberEntity::getMemberEmail, member -> member));
+
+        return posts.stream()
+                .filter(post -> post.getDeleteYn() == 'N') // 삭제되지 않은 게시글만
+                .sorted(Comparator.comparing(PostEntity::getCreatedDate, 
+                        Comparator.nullsLast(Comparator.reverseOrder()))) // 최신순 정렬 (null은 마지막)
+                .map(post -> PostResponseDTO.fromEntity(post, memberMap.get(post.getMemberEmail())))
                 .collect(Collectors.toList());
     }
 
